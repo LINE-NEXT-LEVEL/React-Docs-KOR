@@ -144,7 +144,7 @@ export default function AddTask() {
     // ...
 ```
 
-**`TaskApp` 컴포넌트는 어떤 이벤트 핸들러도 아래로 전달하지 않고, 마찬가지로 `TaskList`도 아무 이벤트 핸들러도 `Task` 컴포넌트에게 전달하지 않습니다.**
+**`TaskApp` 컴포넌트는 아무 이벤트 핸들러도 아래로 전달하지 않고, 마찬가지로 `TaskList`도 이벤트 핸들러를 `Task` 컴포넌트에게 전달하지 않습니다.**
 각각의 컴포넌트는 필요할 때 context에 접근해 읽어올 수 있습니다.
 
 <Code src="https://codesandbox.io/embed/objective-tristan-8179bl?fontsize=14&hidenavigation=1&theme=dark" />
