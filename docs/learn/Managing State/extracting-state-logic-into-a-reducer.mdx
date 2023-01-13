@@ -119,9 +119,9 @@ action 객체는 어떠한 모양도 가질 수 있습니다.
 
 ```js
 dispatch({
-  // specific to component
+  // 컴포넌트에 특정됩니다
   type: 'what_happened',
-  // other fields go here
+  // 다른 속성들은 여기에 옵니다
 });
 ```
 :::
@@ -174,7 +174,7 @@ function tasksReducer(tasks, action) {
 ```
 
 <BlockQuote>
-reducer 함수는 상태(task)를 인자로 받기 때문에, 컴포넌트 밖에 그 인자를 선언해야 합니다. 이렇게 하면 들여쓰기 깊이도 줄어들고 코드도 더 쉽게 읽히도록 만들 수 있습니다.
+reducer 함수는 상태(task)를 인자로 받기 때문에, **컴포넌트 밖에 그 인자를 선언해야 합니다**. 이렇게 하면 들여쓰기 깊이도 줄어들고 코드도 더 쉽게 읽히도록 만들 수 있습니다.
 </BlockQuote>
 
 
