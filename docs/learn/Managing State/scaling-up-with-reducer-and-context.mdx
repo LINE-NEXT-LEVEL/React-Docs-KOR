@@ -65,7 +65,7 @@ reducer를 context와 조합할때는 이렇게 합니다.
 const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
 ```
 
-이를 트리 아래로 전달하기 위해서는 두 개의 서로 다른 [context](https://beta.reactjs.org/learn/passing-data-deeply-with-context#step-2-use-the-context)를 생성해야 합니다.
+이를 트리 아래로 전달하기 위해서는 두 개의 서로 다른 context를 [생성](https://beta.reactjs.org/learn/passing-data-deeply-with-context#step-2-use-the-context)해야 합니다.
 - `TasksContext`는 현재의 task 배열을 전달합니다.
 - `TasksDispatchContext`는 컴포넌트가 dispatch 할 수 있도록 하는 함수를 전달합니다.
 
