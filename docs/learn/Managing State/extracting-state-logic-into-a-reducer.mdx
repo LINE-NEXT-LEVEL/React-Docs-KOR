@@ -326,7 +326,7 @@ reducer를 쓸 때는 두 가지 팁을 머리 속에 기억하세요:
 <Code src="https://codesandbox.io/s/1kbqy4?file=%2FApp.js&utm_medium=sandpack"/> 
 
 reducer는 반드시 순수해야 하기 때문에 상태를 변경시키면 안됩니다. 하지만 Immer는 안전하게 변경할 수 있는 특별한 `초안` 객체를 제공합니다. 
-물 밑에서, Immer는 `초안`에 만든 변경 상태의 복사본을 만들 것입니다. 그렇기 때문에 `useImmerReudcer`로 관리되는 reducer들은 첫 번째 인자를 변경할 수 있고 상태를 반환하지 않아도 됩니다. 
+내부적으로 Immer는 `초안`에 만든 변경 상태의 복사본을 만들 것입니다. 그렇기 때문에 `useImmerReudcer`로 관리되는 reducer들은 첫 번째 인자를 변경할 수 있고 상태를 반환하지 않아도 됩니다. 
 
 ## 되짚어보기
 
