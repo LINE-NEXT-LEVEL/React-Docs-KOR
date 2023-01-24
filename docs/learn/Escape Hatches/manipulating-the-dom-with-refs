@@ -1,0 +1,32 @@
+:::info Deep Dive
+
+## 명령형 핸들로 API 집합 노출하기
+
+위의 예시에서 `MyInput` 원래의 DOM input 요소를 노출합니다. 이는 부모가
+`focus()`를 호출하도록 합니다. 하지만 이는 또한 부모 컴포넌트가 다른 것을 하게 합니다 - 예를 들면
+CSS 스타일을 변경하는 것이 있습니다. 흔하지 않은 경우들에서, 여러분은 노출된 기능을 제한하고 싶을 수 있습니다.
+이 경우, 여러분은 `useImperativeHandle`로 제한할 수 있습니다.
+
+<Code src="https://codesandbox.io/s/rblhoe?file=%2FApp.js&utm_medium=sandpack" />
+
+여기서 `MyInput`내부의 `realInputRef`는 실제 input DOM 노드를 갖고 있습니다. 하지만,
+`useImperativeHandle`는 React가 여러분만의 특별한 객체를 ref의 값으로 부모에게 제공하도록 지도합니다.
+따라서 `Form` 컴포넌트 내부의 `inputRef.current`는 `focus` 메소드만을 가집니다.
+이 경우에 ref "handle"은 DOM 노드가 아니고, 여러분이 `useImperativeHandle` 내부에서 만든 커스텀객체입니다.
+
+:::
+
+## React가 refs를 부착하는 경우
+
+React에서 모든 업데이트는 [두 페이즈](https://beta.reactjs.org/learn/render-and-commit#step-3-react-commits-changes-to-the-dom)로 나눠집니다.
+
+- 렌더링 동안, React는 여러분의 컴포넌트에 어떤게 스크린에 나와야하는지 알려줍니다.
+- commit 동안, React는 변경사항을 DOM에 반영합니다.
+
+일반적으로 여러분은 렌더링동안 refs에 접근 하고싶지 [않을 것](https://beta.reactjs.org/learn/referencing-values-with-refs#best-practices-for-refs) 입니다. 그것은 refs가 DOM 노드들을 갖고 있도록 합니다.
+첫 렌더링동안, DOM 노드들은 아직 만들어지지 않았기 때문에, `ref.current`는 `null`입니다. 그리고 업데이트들을
+렌더링 하는동안, DOM은 아직 업데이트 되지 않았습니다. 따라서 읽기에 너무 이른 시간입니다.
+
+React는 `ref.current`를 commit중에 설정합니다. DOM을 업데이트하기 전에, React는 영향받는 `ref.current`값들을 `null`로 설정합니다. DOM 업데이트 이후, React는 값들을 즉시 알맞은 DOM 노드들로 설정합니다.
+
+**일반적으로, refs에 이벤트 핸들러로 접근할 것 입니다**
