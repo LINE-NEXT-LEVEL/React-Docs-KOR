@@ -133,7 +133,7 @@ React는 `useRef`를 기본적으로 제공하는데 실제 상황에서 충분�
 
 ## ref를 사용하는 경우
 
-컴포넌트가 React에서 "벗어날" 필요가 있을고 외부 API(컴포넌트의 표시에 영향을 주지 않는 브라우저 API)와 소통할 때 보통 ref를 사용합니다.
+컴포넌트가 React에서 "벗어날" 필요가 있고 외부 API(컴포넌트의 표시에 영향을 주지 않는 브라우저 API)와 소통할 때 보통 ref를 사용합니다.
 아래와 같이 몇 가지 흔하지 않은 경우들이 있습니다:
 
 - [timeout ID](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)를 저장하기
@@ -151,7 +151,7 @@ React는 `useRef`를 기본적으로 제공하는데 실제 상황에서 충분�
 React는 `ref.current`가 언제 변경되는지 모르기 때문에, 렌더링동안 `ref.current`를 읽는 것은 컴포넌트의 행동을 예측하는 것을 어렵게 만들 뿐입니다.
 (이에 대한 예외로 첫번째 렌더링동안 ref를 한번만 설정하는 `if (!ref.current) ref.current = new Thing()` 같은 코드입니다.)
 
-React 상태의 한계들은 ref에 없습니다.
+Ref는 React 상태가 가진 한계들을 갖고 있지 않습니다.
 예를 들어, 상태는 [매 렌더링의 스냅샷](https://beta.reactjs.org/learn/state-as-a-snapshot)처럼 동작하고 [동기적으로 업데이트되지도 않습니다](https://beta.reactjs.org/learn/queueing-a-series-of-state-updates).
 하지만 ref의 현재 값을 변경할 때, 그 값은 바로 변경됩니다:
 
@@ -258,11 +258,11 @@ timeout ID를 다른 어딘가에 저장해 두어야 하지 않을까요?
 
 이 예시에서 "보내기" 버튼을 누른 후 메시지가 보여지기 전 약간의 지연이 있습니다.
 "hello"를 입력하고 보내기 버튼을 누른 후 빠르게 입력을 다시 수정합니다.
-여러분의 수정에도 불구하고, 얼럿창은 "hello"(버튼이 클릭된 [때](https://beta.reactjs.org/learn/state-as-a-snapshot#state-over-time)의 상태값)를 보여줄 것입니다. 
+여러분의 수정에도 불구하고, 경고창은 "hello"(버튼이 클릭된 [때](https://beta.reactjs.org/learn/state-as-a-snapshot#state-over-time)의 상태값)를 보여줄 것입니다. 
 
 보통, 이 행동은 앱에서 여러분이 원하는 행위입니다.
 하지만, *가장 최신* 상태를 읽는 비동기적인 코드를 원하는 경우들이 가끔 있을지도 모릅니다.
-클릭 했을 때의 문자가 아닌 *현재* 입력 문구를 얼럿창에 보여주는 방법을 생각할 수 있나요?
+클릭 했을 때의 문자가 아닌 *현재* 입력 문구를 경고창에 보여주는 방법을 생각할 수 있나요?
 
 <Code src="https://codesandbox.io/s/jsmoh6?file=%2FApp.js&utm_medium=sandpack" />
 
@@ -270,7 +270,7 @@ timeout ID를 다른 어딘가에 저장해 두어야 하지 않을까요?
 
 상태는 [스냅샷](https://beta.reactjs.org/learn/state-as-a-snapshot)과 같이 작동하므로 timeout과 같이 비동기적인 작동으로 최근 상태값을 읽을 수 없습니다.
 하지만, 가장 최신의 입력 문구를 ref에 저장할 수 있습니다.
-ref는 수정 가능하므로 언제든 `current` 특징을 읽을 수 있습니다. 
+ref는 수정 가능하므로 언제든 `current` 속성을 읽을 수 있습니다. 
 이 예시에서 최신 문구가 렌더링동안 사용되기 때문에, 상태변수(렌더링을 위해)와 ref(timeout 동안 문구를 읽기 위해) 둘 다 필요합니다.
 여러분은 수동으로 최신 ref 값을 업데이트할 필요가 있습니다.
 
