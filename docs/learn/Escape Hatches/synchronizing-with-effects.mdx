@@ -315,6 +315,62 @@ React는 마지막 Effect의 제거함수를 실행합니다. 마지막 Effect�
 
 :::
 
+:::note 문제에 도전해보세요
+
+## 1. 마운트 시 필드에 포커스를 둡니다
+
+아래 예시에서, 폼은 `<MyInput />` 컴포넌트를 렌더링합니다.
+
+`MyInput`이 화면에 나타날 때 `MyInput`이 자동으로 포커싱되도록 하기 위해 input의 [`focus()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) 방법을 사용하세요.
+이미 주석처리되어 실행되지 않지만 실제로도 동작하지 않습니다. 왜 동작하지 않는지 알아내고 고쳐보세요.
+(`autoFocus` 속성에 친숙하다면, 해당 속성이 존재하지 않다고 가정해 주세요. 밑바닥부터 같은 기능을 만들려 합니다.)
+
+<Code src="https://codesandbox.io/s/uy289j?file=%2FMyInput.js&utm_medium=sandpack" />
+
+여러분의 해결책이 동작한다는 것을 증명하기 위해, "폼 보이기" 버튼을 누르고 입력란이 포커싱을 받는지 확인해 보세요(하이라이트 처리되고 커서가 입력란 내부에 위치해 있습니다).
+"폼 숨기기"와 "폼 보이기" 버튼을 다시 눌러보세요. 입력란이 다시 하이라이팅되는지 확인하세요.
+
+`MyInput`은 모든 렌더링이 아닌 *마운트*에만 포커싱되어야 합니다. 동작이 올바르다는 것을 증명하기 위해, "폼 보이기" 버튼을 누르고나서 반복적으로 "대문자로 만들기" 체크박스를 눌러보세요.
+체크박스를 누르면 입력란에 포커싱이 되어서는 *안됩니다*.
+
+### 정답
+
+렌더링 동안 `ref.current.focus()`를 부르는 것은  `ref.current.focus()`가 *사이드 이펙트*이기 때문에 잘못됬습니다.
+사이드 이펙트는 이벤트 핸들러 내부에 위치해 있거나 `useEffect`와 함께 선언되어야 합니다. 이 경우에, 사이드 이펙트는 어떤 특정한 상호작용이 아닌 컴포넌트의 나타남으로 *발생되므로*, 사이드 이펙트를 Effect 내부에 넣는 것이 말이 됩니다.
+
+오류를 고치기 위해, `ref.current.focus()`를 Effect로 감싸야 합니다. 그리고 나서 이 Effect가 매 렌더링이 아닌 마운트 시에만 실행도록 하기 위해 빈 배열인 `[]` 의존성을 Effect에 추가합니다.
+
+<Code src="https://codesandbox.io/s/ej8om1?file=%2FMyInput.js&utm_medium=sandpack" />
+
+## 2. 조건에 맞게 필드에 포커스를 둡니다
+
+아래 폼은 두개의 `<MyInput />` 컴포넌트를 렌더링합니다.
+
+"폼 보이기" 버튼을 누르고 두번째 필드가 자동으로 포커싱되는 것에 주목하세요. 두 개의 `<MyInput />` 컴포넌트가 필드를 포커스하려고 시도하기 때문입니다. 
+여러분이 연속된 두 개의 입력필드에 `focus()`를 부르면, 마지막 필드가 항상 "이깁니다".
+
+첫번째 필드에 포커스를 두고 싶다고 가정해 봅시다. 첫번째 `MyInput` 컴포넌트는 `true`로 설정된 boolean `shouldFocus` prop을 현재 받고 있습니다.
+`MyInput`에서 `shouldFocus` prop이 `true`인 경우에만 `focus()`가 불리도록 로직을 변경해봅시다.
+
+<Code src="https://codesandbox.io/s/uqfl1d?file=%2FMyInput.js&utm_medium=sandpack" />
+
+여러분의 해결책을 확인하기 위해서, "폼 보이기"와 "폼 숨기기"를 반복적으로 눌러보세요.
+폼이 나타날 때, *첫번째* 입력란만 포커싱이 되어야 합니다. 첫번째 입력란은 `shouldFocus={true}`를 가졌고 두번째 입력란은 `shouldFocus={false}`를 가진채로 부모 컴포넌트가 렌더링하기 때문입니다.
+또한 두 개의 입력란들이 모두 동작하고 여러분이 입력이 가능한지 확인해 보세요.
+
+### 힌트
+
+여러분은 Effect를 조건에 맞게 선언할 수 없지만 Effect는 조건 로직을 포함할 수 있습니다.
+
+### 정답
+
+Effect 내부에 조건 로직을 넣으세요. Effect 내부에 `shouldFocus`를 사용하기 때문에 의존성에 `shouldFocus`를 넣을 필요가 있습니다. 
+(이는 몇몇 입력란의 `shouldFocus`가 `false`에서 `true`로 바뀐다면, 마운트 이후 입력란은 포커스될 것을 의미합니다.)
+
+<Code src="https://codesandbox.io/s/rhxxow?file=%2FMyInput.js&utm_medium=sandpack" />
+
+:::
+
 ## 되짚어보기
 
 - 이벤트와는 다르게, Effect는 특정 상호작용보다는 렌더링에 의해서 발생합니다.
