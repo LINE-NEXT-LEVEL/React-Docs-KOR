@@ -1,6 +1,6 @@
 ### 애니메이션 유발하기
 
-만약 Effect가 애니메이션을 넣는다면, 제거함수는 애니메이션을 초기값으로 리셋해야 합니다:
+만약 Effect가 애니메이션을 넣는다면, cleanup 함수는 애니메이션을 초기값으로 리셋해야 합니다:
 
 ```js
 useEffect(() => {
@@ -14,11 +14,11 @@ useEffect(() => {
 
 개발환경에서, 투명도는 `1`로 설정되었다가 `0`으로 되었다가, 다시 `1`이 됩니다.
 운영 환경에서 바로 투명도를 1로 설정하는 것과 동일한 화면 동작을 사용자에게 보여주어야 합니다.
-만약 여러분이 트윈 애니메이션을 제공하는 외부 애니메이션 라이브러리를 사용한다면, 제거함수는 트윈의 타임라인을 초기상태로 되돌려야 합니다.
+만약 여러분이 트윈 애니메이션을 제공하는 외부 애니메이션 라이브러리를 사용한다면, cleanup 함수는 트윈의 타임라인을 초기상태로 되돌려야 합니다.
 
 ### 데이터 가져오기
 
-만약 Effect가 어떠한 데이터를 가져온다면, 제거함수는 [가져오는 것을 방해](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)하거나 결과물을 무시해야 합니다:
+만약 Effect가 어떠한 데이터를 가져온다면, cleanup 함수는 [가져오는 것을 중단](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)하거나 결과물을 무시해야 합니다:
 
 ```js
 useEffect(() => {
@@ -39,8 +39,8 @@ useEffect(() => {
 }, [userId]);
 ```
 
-여러분은 이미 발생한 네트워크 요청을 "취소"할 수 없지만, 제거함수는 *더이상 관련없는* 데이터 가져오기가 앱에 영향을 주는 것을 하지 못하도록 만들 수 있습니다.
-예를 들어, 만약 `userId`가 `'Alice'`에서 `'Bob'`으로 변경된다면, 제거함수는 `'Bob'`으로 변경된 이후 도착하는 `'Alice'` 응답이 무시되도록 합니다.
+여러분은 이미 발생한 네트워크 요청을 "취소"할 수 없지만, cleanup 함수는 *더이상 관련없는* 데이터 가져오기가 앱에 영향을 주는 것을 하지 못하도록 만들 수 있습니다.
+예를 들어, 만약 `userId`가 `'Alice'`에서 `'Bob'`으로 변경된다면, cleanup 함수는 `'Bob'`으로 변경된 이후 도착하는 `'Alice'` 응답이 무시되도록 합니다.
 **개발환경에서, 네트워크 탭에서 두개의 데이터 가져오기를 볼 수 있습니다.**
 여기에는 어떤 오류도 없습니다.
 이 접근법으로 위 예시를 보면, 첫번째 Effect는 즉시 제거될 것이고 `ignore` 변수는 `true`로 설정되어 있을 것입니다.
@@ -63,7 +63,7 @@ function TodoList() {
 
 ### Effect에서 데이터를 가져오는 것을 대체할 다른 좋은 방안들이 있나요?
 
-Effect 내부에서 `fetch`를 부르도록 코드를 작성하는 것은 [데이터를 가져오는 유명한 방식](https://www.robinwieruch.de/react-hooks-fetch-data/)입니다. 특히, 완전한 client side 앱에서는 더욱 그렇습니다.
+Effect 내부에서 `fetch`를 부르도록 코드를 작성하는 것은 [데이터를 가져오는 일반적인 방식](https://www.robinwieruch.de/react-hooks-fetch-data/)입니다. 특히, 완전한 client side 앱에서는 더욱 그렇습니다.
 하지만, 매우 수동적인 접근 방식이며 아래와 같은 중요한 단점들을 가지고 있습니다:
 
 - **Effect는 서버에서 실행되지 않습니다.** 처음 서버에서 렌더된 HTML은 데이터가 없는 로딩중인 상태만을 가지고 있다는 것을 의미합니다.
@@ -76,7 +76,7 @@ Effect 내부에서 `fetch`를 부르도록 코드를 작성하는 것은 [데�
 
 - **상당히 인체공학적이지 않습니다.**  [경쟁 상태](https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect)와 같은 오류들로부터 고통받지 않는 방식으로 `fetch`를 부르도록 작성하는 것을 포함해 약간의 보일러 플레이트가 존재합니다.
 
-이 일련의 단점들은 React에 한정되 있지 않습니다. 어느 라이브러리에서든 마운트 시 데이터를 가져오도록 적용하고 있습니다.
+이 일련의 단점들은 React에 한정되어 있지 않습니다. 어느 라이브러리에서든 마운트 시 데이터를 가져오도록 적용하고 있습니다.
 라우팅처럼 데이터를 가져오는 것은 절대 사소한 부분이 아니므로 다음 접근법들을 추천하고 있습니다:
 
 - **[프레임워크](https://beta.reactjs.org/learn/start-a-new-react-project#building-with-a-full-featured-framework)를 사용하고 있다면, 프레임워크에서 기본으로 제공하고 있는 데이터를 가져오는 방식을 사용하세요.** 
@@ -131,7 +131,7 @@ function App() {
 
 ### Effect가 아닌 경우 : 상품을 사기
 
-가끔, 여러분이 제거함수를 작성해도, Effect가 두 번 실행되어 나온 결과물을 사용자가 보지 못하도록 막을 수 없는 경우가 있습니다.
+가끔, 여러분이 cleanup 함수를 작성해도, Effect가 두 번 실행되어 나온 결과물을 사용자가 보지 못하도록 막을 수 없는 경우가 있습니다.
 예를 들어, Effect가 상품을 구매 POST 요청을 보내는 것이 있습니다:
 
 ```js
@@ -165,7 +165,7 @@ React는 개발 환경에서 컴포넌트들을 다시 마운트시켜 컴포넌
 이 파트에서는 Effect가 실제로 어떻게 동작하는지에 대해 "감을 느낄" 수 있도록 도와줍니다.
 
 아래 예시는 Effect가 실행되고나서 3초 후에 입력 문구가 콘솔에 나타나도록 만들기 위해 [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)을 사용합니다.
-제거함수는 취소합니다. "컴포넌트 마운트하기" 버튼을 눌러서 시작해보세요.
+cleanup 함수는 취소합니다. "컴포넌트 마운트하기" 버튼을 눌러서 시작해보세요.
 
 <Code src="https://codesandbox.io/s/4rybls?file=%2FApp.js&utm_medium=sandpack" />
 
@@ -177,19 +177,19 @@ React는 개발 환경에서 컴포넌트들을 다시 마운트시켜 컴포넌
 충분히 빠르게 입력한다면, `Schedule "ab" log` 다음에 `Cancel "ab" log`, `Schedule "abc" log`를 볼 수 있을 것입니다. 
 **React는 항상 이전 렌더의 Effect를 다음 렌더의 Effect 전에 제거합니다.**
 여러분이 빠르게 입력하더라도 한 번에 최대 한 개의 timeout만이 예약되어 있는 이유입니다.
-입력을 몇 번 수정해보고 어떻게 Effect가 제거되는지 console을 보면서 확인해 보세요.
+입력을 몇 번 수정해보고 어떻게 Effect가 제거되는지 감을 잡기 위해 console을 보면서 확인해 보세요.
 
 입력에 어떤 것이든 입력하고나서 "컴포넌트 언마운트하기"를 누르세요.
 **언마운트가 마지막 렌더의 Effect를 어떻게 제거하는지 주목하세요.**
-이 예시에서, 언마운트 시 제거함수를 통해 timeout이 실행되기 전에 마지막 timeout을 제거합니다.
+이 예시에서, 언마운트 시 cleanup 함수를 통해 timeout이 실행되기 전에 마지막 timeout을 제거합니다.
 
-마지막으로, timeout이 취소되지 않도록 위의 컴포넌트에서 제거함수를 삭제해 보세요.
+마지막으로, timeout이 취소되지 않도록 위의 컴포넌트에서 cleanup 함수를 삭제해 보세요.
 `abcde`를 빠르게 입력해 보세요.
 여러분은 삼초 안에 무슨 일이 일어날지 예상하나요? 
 timeout 내부에 있는 `console.log(text)`가 *마지막* `text`를 프린트하고 다섯 개의 `abcde` 로그를 만들어낼까요?
 여러분의 직관을 검사하기 위해 직접 시도해 보세요!
 
-삼초 후, 여러분은 다섯개의 `abcde` 로그가 아닌 일련의 로그들(`a`, `ab`, `abc`, `abcd`, 그리고 `abcde`)을 볼 것입니다.
+3초 후, 여러분은 다섯개의 `abcde` 로그가 아닌 일련의 로그들(`a`, `ab`, `abc`, `abcd`, 그리고 `abcde`)을 볼 것입니다.
 **각각의 Effect는 Effect에 대응하는 렌더에서 `text`를 "잡아냅니다".**
 Effect는 `text` 상태가 변경한 것을 신경쓰지 않습니다. `text = 'ab'`로 렌더링 됬을 때의 Effect는 항상 `'ab'`를 바라보고 있습니다.
 즉, 각각의 렌더링에서 Effect는 서로 독립되어 있습니다. 
@@ -294,9 +294,9 @@ React는 `"Welcome to general"`에서 `"Welcome to travel"`으로 바뀌도록 D
 React는 첫번째 렌더링에서의 `['general']`과 세번째 렌더링에서의 `['travel']`을 비교합니다.
 `Object.is('travel', 'general')`가 `false`이기 때문에 의존성이 다릅니다. Effect는 생략되지 않습니다.
 
-세번째 렌더링에서 React가 Effect를 적용하기 전에, React는 마지막으로 실행*되었던* Effect를 제거할 필요가 있습니다.
+**세번째 렌더링에서 React가 Effect를 적용하기 전에, React는 마지막으로 실행*되었던* Effect를 제거할 필요가 있습니다.**
 두번째 렌더의 Effect는 생략되었으므로 React는 첫번째 렌더의 Effect를 제거할 필요가 있습니다.
-첫번째 렌더 부분으로 스크롤을 올려보면, 여러분은 첫번째 렌더의 제거함수가 `createConnection('general')`로 생성된 커넥션에서 `disconnect()`를 실행하는 것을 볼 수 있습니다.
+첫번째 렌더 부분으로 스크롤을 올려보면, 여러분은 첫번째 렌더의 cleanup 함수가 `createConnection('general')`로 생성된 커넥션에서 `disconnect()`를 실행하는 것을 볼 수 있습니다.
 이는 `'general'` 채팅 방에서 앱과의 연결을 끊는 것입니다.
 
 그 후 React는 세번째 렌더링의 Effect를 실행합니다. 이 Effect는 `'travel'` 채팅 방을 연결합니다.
@@ -304,14 +304,14 @@ React는 첫번째 렌더링에서의 `['general']`과 세번째 렌더링에서
 ### 언마운트
 
 마지막으로, 사용자가 떠나고나서 `ChatRoom` 컴포넌트가 언마운트된다고 가정해 봅시다.
-React는 마지막 Effect의 제거함수를 실행합니다. 마지막 Effect는 세번째 렌더에서 발생했던 것입니다.
-세번째 렌더의 제거함수는 `createConnection('travel')` 커넥션을 파괴합니다. 따라서 앱은 `'travel'` 방과 연결을 끊습니다.
+React는 마지막 Effect의 cleanup 함수를 실행합니다. 마지막 Effect는 세번째 렌더에서 발생했던 것입니다.
+세번째 렌더의 cleanup 함수는 `createConnection('travel')` 커넥션을 파괴합니다. 따라서 앱은 `'travel'` 방과 연결을 끊습니다.
 
 ### 개발환경에서의 동작들
 
-[엄격 모드](https://beta.reactjs.org/reference/react/StrictMode)가 켜져있을 때, React는 마운트 이후 모든 컴포넌트를 한 번 더 재마운트합니다. (상태와 DOM은 보존됩니다.)
-이 동작은 경쟁 상태와 같은 오류를 빠르게 노출시키고 [여러분이 제거함수가 필요한 Effect를 찾아내는 데 도움을 줍니다](https://beta.reactjs.org/learn/synchronizing-with-effects#step-3-add-cleanup-if-needed).
-추가로, React는 개발환경에서 파일을 저장할 때마다 Effect를 재마운트합니다. 이 두 동작들은 모두 개발환경에만 있습니다.
+[엄격 모드](https://beta.reactjs.org/reference/react/StrictMode)가 켜져있을 때, React는 마운트 이후 모든 컴포넌트를 한 번 더 마운트합니다. (상태와 DOM은 보존됩니다.)
+이 동작은 경쟁 상태와 같은 오류를 빠르게 노출시키고 [여러분이 cleanup 함수가 필요한 Effect를 찾아내는 데 도움을 줍니다](https://beta.reactjs.org/learn/synchronizing-with-effects#step-3-add-cleanup-if-needed).
+추가로, React는 개발환경에서 파일을 저장할 때마다 Effect를 다시 마운트합니다. 이 두 동작들은 모두 개발환경에만 있습니다.
 
 :::
 
@@ -324,8 +324,8 @@ React는 마지막 Effect의 제거함수를 실행합니다. 마지막 Effect�
 - 여러분은 의존성을 "선택"할 수 없습니다. 의존성은 Effect 내부의 코드로 결정되어집니다.
 - 빈 의존성 배열(`[]`)은 컴포넌트의 "마운팅"(화면에 추가되는 순간)과 대응됩니다.
 - 엄격 모드가 켜 있을 때에는 React가 Effect를 스트레스 테스트하기 위해 컴포넌트를 두 번 마운트합니다. (오직 개발환경에서만!)
-- Effect가 재마운팅 때문에 문제가 생겼다면, 제거함수 실행을 넣어야 합니다.
-- React는 다음 Effect가 실행되기 전과 언마운트 동안 제거함수를 부릅니다.
+- Effect가 재마운팅 때문에 문제가 생겼다면, cleanup 함수 실행을 넣어야 합니다.
+- React는 다음 Effect가 실행되기 전과 언마운트 동안 cleanup 함수를 부릅니다.
 
 :::note 문제에 도전해보세요
 
@@ -347,7 +347,7 @@ React는 마지막 Effect의 제거함수를 실행합니다. 마지막 Effect�
 
 ### 정답
 
-렌더링 동안 `ref.current.focus()`를 부르는 것은  `ref.current.focus()`가 *사이드 이펙트*이기 때문에 잘못됬습니다.
+렌더링 동안 `ref.current.focus()`를 부르는 것은  `ref.current.focus()`가 *사이드 이펙트*이기 때문에 잘못됐습니다.
 사이드 이펙트는 이벤트 핸들러 내부에 위치해 있거나 `useEffect`와 함께 선언되어야 합니다. 이 경우에, 사이드 이펙트는 어떤 특정한 상호작용이 아닌 컴포넌트의 나타남으로 *발생되므로*, 사이드 이펙트를 Effect 내부에 넣는 것이 말이 됩니다.
 
 오류를 고치기 위해, `ref.current.focus()`를 Effect로 감싸야 합니다. 그리고 나서 이 Effect가 매 렌더링이 아닌 마운트 시에만 실행도록 하기 위해 빈 배열인 `[]` 의존성을 Effect에 추가합니다.
@@ -381,7 +381,7 @@ Effect 내부에 조건 로직을 넣으세요. Effect 내부에 `shouldFocus`�
 
 <Code src="https://codesandbox.io/s/rhxxow?file=%2FMyInput.js&utm_medium=sandpack" />
 
-## 두 번 실행되는 interval를 수정합니다
+## 3. 두 번 실행되는 interval를 수정합니다
 
 `Counter` 컴포넌트는 매초 증가하는 카운터를 보여줍니다. 
 마운트 되었을 때, `Counter` 컴포넌트는 [`setInterval`](https://developer.mozilla.org/en-US/docs/Web/API/setInterval)를 부릅니다.
@@ -399,22 +399,22 @@ Effect 내부에 조건 로직을 넣으세요. Effect 내부에 `shouldFocus`�
 
 ### 정답
 
-[엄격 모드](https://beta.reactjs.org/reference/react/StrictMode)가 켜져있을 때(이 사이트에 있는 sandbox 안의 코드처럼), React는 개발환경에서 한 번 더 각각의 컴포넌트를 재마운트합니다.
+[엄격 모드](https://beta.reactjs.org/reference/react/StrictMode)가 켜져있을 때(이 사이트에 있는 sandbox 안의 코드처럼), React는 개발환경에서 한 번 더 각각의 컴포넌트를 마운트합니다.
 이 엄격 모드가 interval이 두 번 실행되도록 만들었고 매초 counter가 두 번 증가한 이유입니다.
 
 하지만, React의 동작은 오류의 *원인*이 아닙니다. 오류는 이미 코드에 있었습니다.
 React의 동작은 오류를 더 잘 찾을 수 있도록 만들었습니다. 실제 원인은 이 Effect가 프로세스를 시작하지만 Effect를 제거하는 방식이 제공되어 있지 않습니다.
 
-이 코드를 수정하기 위해, `setInterval`에서 반환된 interval ID를 저장하고 [`clearInterval`](https://developer.mozilla.org/en-US/docs/Web/API/clearInterval)를 이용한 제거함수를 실행합니다.
+이 코드를 수정하기 위해, `setInterval`에서 반환된 interval ID를 저장하고 [`clearInterval`](https://developer.mozilla.org/en-US/docs/Web/API/clearInterval)를 이용한 cleanup 함수를 실행합니다.
 
 <Code src="https://codesandbox.io/s/o25bp3?file=%2FCounter.js&utm_medium=sandpack" />
 
-개발환경에서, React는 여러분이 제거를 잘 실행했는지 확인하기 위해 컴포넌트를 한 번 더 재마운트할 것입니다.
+개발환경에서, React는 여러분이 제거를 잘 실행했는지 확인하기 위해 컴포넌트를 한 번 더 마운트할 것입니다.
 따라서 `setInterval`이 불린다면, 즉시 `clearInterval`도 불리우고, 다시 `setInterval`이 불립니다.
 운영환경에서는 오직 한번만 `setInterval`이 불립니다.
 두 경우 모두 사용자가 바라보는 측면에서는 같습니다. 카운터는 매초 증가합니다.
 
-## Effect 내부의 데이터 가져오기를 수정합니다
+## 4. Effect 내부의 데이터 가져오기를 수정합니다
 
 아래 컴포넌트는 선택된 사람의 전기를 보여줍니다.
 컴포넌트는 마운트될 때와 `person`이 변경될 때마다 비동기 함수인 `fetchBio(person)`를 불러서 전기를 가져옵니다
@@ -430,7 +430,7 @@ React의 동작은 오류를 더 잘 찾을 수 있도록 만들었습니다. �
 
 ### 힌트
 
-만약 Effect가 비동기적으로 무언가를 가져온다면, 보통 제거함수가 필요합니다.
+만약 Effect가 비동기적으로 무언가를 가져온다면, 보통 cleanup 함수가 필요합니다.
 
 ### 정답
 
@@ -446,7 +446,7 @@ React의 동작은 오류를 더 잘 찾을 수 있도록 만들었습니다. �
 Taylor가 선택되었지만 Bob의 전기가 보여진 이유입니다. 이런 오류들을 [경쟁 상태](https://en.wikipedia.org/wiki/Race_condition)라고 부릅니다.
 두 개의 비동기 동작들이 서로 "경쟁"하며 예상하지 못한 순서로 도착하기 때문입니다.
 
-이 경쟁상태를 고치기 위해서 제거함수를 추가해야 합니다.
+이 경쟁상태를 고치기 위해서 cleanup 함수를 추가해야 합니다.
 
 <Code src="https://codesandbox.io/s/43lcvp?file=%2FApp.js&utm_medium=sandpack" />
 
