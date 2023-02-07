@@ -1,4 +1,6 @@
-import {Code} from "../../../src/components/Code";React는 여러분의 컴포넌트가 자주 수정될 필요가 없도록 렌더링 결과물에 알맞게 자동으로 [DOM](https://developer.mozilla.org/docs/Web/API/Document_Object_Model/Introduction)을 업데이트합니다.
+import {Code} from "../../../src/components/Code";
+
+React는 여러분의 컴포넌트가 자주 수정될 필요가 없도록 렌더링 결과물에 알맞게 자동으로 [DOM](https://developer.mozilla.org/docs/Web/API/Document_Object_Model/Introduction)을 업데이트합니다.
 하지만 가끔은 React에 의해 관리되고 있는 DOM에 직접 접근해야 할 필요가 있습니다.
 노드를 focus 한다거나, 그 노드로 스크롤을 해야 한다거나, 사이즈와 위치를 알아야 할 때가 적절한 예시입니다.
 React에 그런 작업을 위한 빌트인 도구가 없기 때문에, _ref_를 통해 DOM 노드에 접근해야 합니다.
