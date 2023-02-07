@@ -78,8 +78,7 @@ Ref에 대한 내용을 더 알고 싶다면 [ref의 참조 변수](https://beta
 </ul>
 ```
 
-이는 *hook이 항상 컴포넌트의 최상단에서 호출되어야 하기 때문입니다.* `useRef`는 루프나, 조건문이나, `map()` 내부에서 호출될 수 없습니다.
-
+이는 **hook이 항상 컴포넌트의 최상단에서 호출되어야 하기 때문입니다.** `useRef`는 루프나, 조건문이나, `map()` 내부에서 호출될 수 없습니다.
 한가지 가능한 방법은 부모 요소에 하나의 ref를 두고, `[querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll)`과 같은 메소드를 이용해 각각의 자식 노드들을 "찾는"것입니다.
 하지만 이 방법은 안정성이 떨어지고 DOM 구조가 바뀔 경우 동작하지 않을 수 있습니다.
 
