@@ -168,7 +168,7 @@ prop 또는 상태값이 달라졌을 때 재 동기화를 수행합니다.
 가끔 여러분은 이 두 동작을 섞고 싶을 것 입니다: Effect가 어떤 값에는 반응하여 재실행되고, 다른 것들에는 실행되지 않도록 말입니다.
 
 Effect 내부의 모든 코드는 *반응형*입니다. 리렌더링때문에 Effect가 읽는 반응형 값이 변경되면 실행될 것 입니다.
-예를 들어 이 Effect는 `roomId`나 `theme`가 인터렉션 후에 변ㄱ여되면 재연결 합니다.
+예를 들어 이 Effect는 `roomId`나 `theme`가 인터렉션 후에 변경되면 재연결 합니다.
 
 <Code src="https://codesandbox.io/s/tpigyx?file=%2FApp.js&utm_medium=sandpack" />
 
