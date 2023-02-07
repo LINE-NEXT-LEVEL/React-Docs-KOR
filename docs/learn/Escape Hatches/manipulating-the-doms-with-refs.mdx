@@ -82,7 +82,7 @@ Ref에 대한 내용을 더 알고 싶다면 [ref의 참조 변수](https://beta
 한가지 가능한 방법은 부모 요소에 하나의 ref를 두고, `[querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll)`과 같은 메소드를 이용해 각각의 자식 노드들을 "찾는"것입니다.
 하지만 이 방법은 안정성이 떨어지고 DOM 구조가 바뀔 경우 동작하지 않을 수 있습니다.
 
-다른 방법은 *함수에 `ref` 속성을 넘기는 것*입니다. 이는 [`ref` 콜백](https://beta.reactjs.org/reference/react-dom/components/common#ref-callback)이라고 불리는 이 방법은 DOM 노드에 ref가 세팅되는 시점에 React로 하여금 콜백을 호출하도록 합니다.
+다른 방법은 **함수에 `ref` 속성을 넘기는 것**입니다. 이는 [`ref` 콜백](https://beta.reactjs.org/reference/react-dom/components/common#ref-callback)이라고 불리는 이 방법은 DOM 노드에 ref가 세팅되는 시점에 React로 하여금 콜백을 호출하도록 합니다.
 그리고 초기화하는 시점에는 `null`이 됩니다. 이 방법은 배열이나 [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)을 사용하면서 index와 같은 ID를 통해 어떤 ref에도 접근할 수 있도록 합니다.
 
 이 예시는 어떻게 이 접근법이 긴 배열 내부의 임의의 노드에 스크롤할 수 있는지를 보여줍니다.
