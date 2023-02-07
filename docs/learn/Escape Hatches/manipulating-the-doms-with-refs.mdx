@@ -49,7 +49,7 @@ myRef.current.scrollIntoView();
 
 이를 구현하기 위해서는
 1. `useRef` hook을 통해 `inputRef`를 선언합니다.
-2. 이를 `<input ref={inputRef}>`에 넘깁니다. 이는 React에게 *이 `<input>`의 DOM 노드를 `inputRef.current`에 넣으라는 말과 같습니다.*
+2. 이를 `<input ref={inputRef}>`에 넘깁니다. 이는 React에게 **이 `<input>`의 DOM 노드를 `inputRef.current`에 넣으라는 말과 같습니다.**
 3. `handleClick` 함수 안에서 `inputRef.current`에 있는 DOM 노드의 참조를 읽고 `inputRef.current.focus()`를 통해 `[focus()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus)` 함수를 호출합니다.
 4. `handleClick` 이벤트 핸들러를 `<button>`의 `onClick` 속성에 넘겨줍니다.
 
@@ -65,6 +65,9 @@ Ref에 대한 내용을 더 알고 싶다면 [ref의 참조 변수](https://beta
 <Code src="https://codesandbox.io/embed/priceless-lake-tzej7b?fontsize=14&hidenavigation=1&theme=dark" />
 
 :::note DEEP DIVE
+
+**콜백을 이용해 ref들의 배열을 관리하는 방법**
+
 위 예시에서, 이미 정의된 ref가 몇개 있습니다. 하지만, 가끔 배열의 각 아이템 갯수만큼 ref가 필요할 수도 있습니다.
 그리고 얼마나 필요한지 여러분은 모르는 상황이죠. 아래와 같은 코드는 **동작하지 않을 겁니다.**
 
@@ -116,7 +119,7 @@ Ref에 대한 내용을 더 알고 싶다면 [ref의 참조 변수](https://beta
 `<input>`과 같은 브라우저 요소를 출력하는 내장 구성 요소에 ref를 넣으면 React는 해당 ref의 `current` 속성을 해당 DOM 노드(브라우저의 실제 `<input />`같은)로 설정합니다.
 
 하지만, ref를 `<MyInput />`과 같이 **직접 만든** 컴포넌트에 넘겨준다면 기본값은 `null`이 될 것입니다.
-아래는 이를 보여주는 예시이빈다. 버튼을 클릭해도 input이 focus되지 **않는**다는 점에 유의하세요.
+아래는 이를 보여주는 예시입니다. 버튼을 클릭해도 input이 focus되지 **않는**다는 점에 유의하세요.
 
 <Code src="https://codesandbox.io/embed/long-moon-jo1l20?fontsize=14&hidenavigation=1&theme=dark" />
 
