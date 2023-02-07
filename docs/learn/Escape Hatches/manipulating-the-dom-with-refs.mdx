@@ -61,7 +61,7 @@ flushSync(() => {
 listRef.current.lastChild.scrollIntoView();
 ```
 
-이는 `flushSync`로 감싸진 코드가 실행된 후 React가 동기적으로 DOM을 업데이트하도록 합니다. 결과로
+이는 `flushSync`로 감싸진 코드가 실행된 후 React가 동기적으로 DOM을 업데이트하도록 합니다. 결과적으로
 마지막 TODO는 여러분이 스크롤을 시도할 때 DOM에 존재하게 됩니다.
 
 <Code src="https://codesandbox.io/s/tub4es?file=%2FApp.js&utm_medium=sandpack" />
