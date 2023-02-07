@@ -143,7 +143,7 @@ const MyInput = forwardRef((props, ref) => {
 이 방법이 동작하는 방식은 아래와 같습니다.
 
 1. `MyInput ref={inputRef} />`는 React에게 해당 DOM 노드를 `inputRef.current`에 넣으라고 지시합니다. 하지만, 이를 선택하는 것은 `MyInput`에게 달려 있습니다. 기본적으로는 그렇지 않습니다.
-2. `MyInput`컴포넌트는 `fowradRef`를 이용해 선언되었습니다. *이를 통해 `inputRef`를 `props` 뒤의 두번째 인자인 `ref`를 통해 받을 것이라 선택합니다.*
+2. `MyInput`컴포넌트는 `fowradRef`를 이용해 선언되었습니다. **이를 통해 `inputRef`를 `props` 뒤의 두번째 인자인 `ref`를 통해 받을 것이라 선택합니다.**
 3. `MyInput`은 `ref`를 `<input>`의 내부에 전달합니다.
 
 이제 버튼을 클릭하면 input이 focus됩니다.
