@@ -43,7 +43,7 @@ React 컴포넌트와 다른 외부 시스템(네트워크나 다른 라이브�
 
 ## Effect가 필요 없을 수도 있습니다.
 
-**컴포넌트에 급하게 Effect를 추가하지 마세요.** Effect는 보통 React 코드의 "단계에서 벗어나고" 외부 시스템과 동기화하기 위해 사용된다는 것을 유념하세요.
+**컴포넌트에 급하게 Effect를 추가하지 마세요.** Effect는 보통 React 코드의 "단계에서 벗어나고" *외부* 시스템과 동기화하기 위해 사용된다는 것을 유념하세요.
 이는 브라우저 API, 위젯, 네트워크 등등을 포함합니다. Effect가 다른 상테에 의존하는 어떤 상태를 조정한다면, [Effect가 필요 없을 수 있습니다.](https://beta.reactjs.org/learn/you-might-not-need-an-effect)
 
 ## Effect를 작성하는 방법
