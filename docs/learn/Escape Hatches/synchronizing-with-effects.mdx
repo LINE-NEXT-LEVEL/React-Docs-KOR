@@ -1,0 +1,481 @@
+### 애니메이션 유발하기
+
+만약 Effect가 애니메이션을 넣는다면, cleanup 함수는 애니메이션을 초기값으로 리셋해야 합니다:
+
+```js
+useEffect(() => {
+  const node = ref.current;
+  node.style.opacity = 1; // 애니메이션을 유발합니다
+  return () => {
+    node.style.opacity = 0; // 초기값으로 리셋합니다
+  };
+}, []);
+```
+
+개발환경에서, 투명도는 `1`로 설정되었다가 `0`으로 되었다가, 다시 `1`이 됩니다.
+운영 환경에서 바로 투명도를 1로 설정하는 것과 동일한 화면 동작을 사용자에게 보여주어야 합니다.
+만약 여러분이 트윈 애니메이션을 제공하는 외부 애니메이션 라이브러리를 사용한다면, cleanup 함수는 트윈의 타임라인을 초기상태로 되돌려야 합니다.
+
+### 데이터 가져오기
+
+만약 Effect가 어떠한 데이터를 가져온다면, cleanup 함수는 [가져오는 것을 중단](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)하거나 결과물을 무시해야 합니다:
+
+```js
+useEffect(() => {
+  let ignore = false;
+
+  async function startFetching() {
+    const json = await fetchTodos(userId);
+    if (!ignore) {
+      setTodos(json);
+    }
+  }
+
+  startFetching();
+
+  return () => {
+    ignore = true;
+  };
+}, [userId]);
+```
+
+여러분은 이미 발생한 네트워크 요청을 "취소"할 수 없지만, cleanup 함수는 *더이상 관련없는* 데이터 가져오기가 앱에 영향을 주는 것을 하지 못하도록 만들 수 있습니다.
+예를 들어, 만약 `userId`가 `'Alice'`에서 `'Bob'`으로 변경된다면, cleanup 함수는 `'Bob'`으로 변경된 이후 도착하는 `'Alice'` 응답이 무시되도록 합니다.
+**개발환경에서, 네트워크 탭에서 두개의 데이터 가져오기를 볼 수 있습니다.**
+여기에는 어떤 오류도 없습니다.
+이 접근법으로 위 예시를 보면, 첫번째 Effect는 즉시 제거될 것이고 `ignore` 변수는 `true`로 설정되어 있을 것입니다.
+그래서 추가요청이 있더라도, `if (!ignore)` 조건 덕분에 추가요청은 상태에 영향을 끼치지 않을 것입니다.
+
+**운영 환경에서, 한번의 요청만 있을 것입니다.**
+개발환경에서 두번째 요청이 여러분을 괴롭힌다면, 최선의 방법은 요청의 중복을 제거하고 컴포넌트들 간의 응답을 캐시하는 것이 가장 좋습니다.
+
+```js
+function TodoList() {
+  const todos = useSomeDataLibrary(`/api/user/${userId}/todos`);
+  // ...
+```
+
+개발경험을 향상시킬뿐만 아니라, 앱이 더 빠르게 동작하는 것처럼 느껴질 것입니다.
+예를 들어, 뒤로가기 버튼을 눌렀을 때 데이터가 캐시되었기 때문에 사용자는 데이터가 다시 불러와지는 것을 기다릴 필요가 없습니다.
+여러분이 캐시를 만들어 낼 수도 있고 또는 Effect를 이용해 수동으로 데이터를 가져오는 것의 여러 대체 방안들 중 하나를 사용할 수 있습니다.
+
+:::info Deep Dive
+
+### Effect에서 데이터를 가져오는 것을 대체할 다른 좋은 방안들이 있나요?
+
+Effect 내부에서 `fetch`를 부르도록 코드를 작성하는 것은 [데이터를 가져오는 일반적인 방식](https://www.robinwieruch.de/react-hooks-fetch-data/)입니다. 특히, 완전한 client side 앱에서는 더욱 그렇습니다.
+하지만, 매우 수동적인 접근 방식이며 아래와 같은 중요한 단점들을 가지고 있습니다:
+
+- **Effect는 서버에서 실행되지 않습니다.** 처음 서버에서 렌더된 HTML은 데이터가 없는 로딩중인 상태만을 가지고 있다는 것을 의미합니다.
+사용자 컴퓨터는 모든 JavaScript를 다운로드하고 앱을 렌더해야만 데이터를 가져와야 하는지 판단할 수 있습니다. 이는 효율적이지 않습니다.
+
+- **Effect에서 바로 데이터를 가져오는 것은 "네트워크 폭포" 현상을 만들 수 있습니다.** 부모 컴포넌트를 렌더링하고, 부모 컴포넌트가 어떤 데이터를 가져오고, 그리고나서 자식 컴포넌트들이 렌더링되고 자식 컴포넌트들은 각각의 데이터를 가져오기 시작합니다.
+만약 네트워크가 빠르지 않다면, 병렬로 모든 데이터를 가져오는 것보다 매우 느릴 것입니다.
+
+- **Effect에서 바로 데이터를 가져오는 것은 보통 데이터를 미리 가져오거나 캐시할 수 없음을 의미합니다.** 예를 들어, 컴포넌트가 마운트와 언마운트를 계속하면, 컴포넌트는 데이터를 반복해서 가져와야만 합니다.
+
+- **상당히 인체공학적이지 않습니다.**  [경쟁 상태](https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect)와 같은 오류들로부터 고통받지 않는 방식으로 `fetch`를 부르도록 작성하는 것을 포함해 약간의 보일러 플레이트가 존재합니다.
+
+이 일련의 단점들은 React에 한정되어 있지 않습니다. 어느 라이브러리에서든 마운트 시 데이터를 가져오도록 적용하고 있습니다.
+라우팅처럼 데이터를 가져오는 것은 절대 사소한 부분이 아니므로 다음 접근법들을 추천하고 있습니다:
+
+- **[프레임워크](https://beta.reactjs.org/learn/start-a-new-react-project#building-with-a-full-featured-framework)를 사용하고 있다면, 프레임워크에서 기본으로 제공하고 있는 데이터를 가져오는 방식을 사용하세요.** 
+현대 React 프레임워크는 위의 주의사항들로부터 고통받지 않고 효율적인 데이터 가져오기 방식들을 통합해 왔습니다.
+
+- **사용자 측의 캐시를 사용하거나 만드는 것을 고려해 보세요.** 인기 있는 오픈 소스 솔루션에는 [React Query](https://tanstack.com/query/latest), [useSWR]https://swr.vercel.app/ko), 그리고 [React Router 6.4](https://beta.reactrouter.com/en/main/start/overview) 등이 있습니다. 
+여러분은 여러분만의 솔루션을 만들 수 있습니다. 그 솔루션은 내부적으로 Effect를 사용하지만 요청을 중복해서 보내지 않고, 응답을 캐싱하고, 네트워크 폭포 현상을 피하는(경로에 데이터를 미리 로드하거나 데이터 요구사항들을 호이스팅함으로서) 로직이 추가되어 있는 경우입니다.
+
+여러분은 이 접근법들이 여러분에게 맞지 않다면 Effect에서 바로 데이터를 가져올 수 있습니다.
+:::
+
+### 분석 데이터 보내기
+
+페이지 방문 시 분석 데이터를 보내는 이벤트를 보내는 코드를 생각해 봅시다:
+
+```js
+useEffect(() => {
+  logVisit(url); // POST 요청을 보냅니다
+}, [url]);
+```
+
+개발 환경에서, `logVisit`은 모든 URL에 대해서 두번 불려서 여러분은 이를 해결하려고 시도해보았을 수도 있습니다.
+**이 코드를 유지하는 것을 추천드립니다.**
+이전의 예시들과 같이, 한 번 `logVisit`을 실행하는 것과 두 번 실행하는 것 사이에 사용자 화면에서는 차이가 없습니다.
+실질적인 관점으로 `logVisit`은 개발환경에서 어떠한 것도 하면 안되는데 그 이유는 개발 환경에서의 로그가 운영 환경의 측정치들을 왜곡해서는 안되기 때문입니다.
+파일을 저장할 때마다 컴포넌트는 재마운트하므로 개발 중에는 어떻게든 추가적인 방문 데이터를 보낼 것입니다.
+
+**운영 환경에서는 중복된 방문 로그가 없을 것입니다.**
+
+여러분이 보낸 분석 데이터를 디버깅하기 위해, 스테이징 환경(운영 환경과 거의 동일한 환경)에 배포하거나 [엄격 모드](https://beta.reactjs.org/reference/react/StrictMode) 및 개발 전용의 재마운트를 잠시 해제할 수 있습니다.
+Effect 대신에 라우트가 변경될 때 이벤트 핸들러를 통해 분석 데이터를 보낼 수 있습니다.
+더 정확한 분석을 위해서, [intersection observer](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API)가 화면 내 어떤 컴포넌트가 있고 얼마나 오랫동안 해당 영역이 보였는지 추적할 수 있게 도와줄 수 있습니다.
+
+### Effect가 아닌 경우 : 앱을 초기화하기
+
+일부 로직은 앱이 시작할 때 한번만 실행됩니다.
+이 로직을 컴포넌트 밖에 놓을 수 있습니다.
+
+```js
+if (typeof window !== 'undefined') { // 브라우저가 실행되고 있는지 확인합니다
+  checkAuthToken();
+  loadDataFromLocalStorage();
+}
+
+function App() {
+  // ...
+}
+```
+
+이 방식은 브라우저가 페이지에 로드한 이후 오직 한번만 로직이 실행되는 것을 보장합니다.
+
+
+### Effect가 아닌 경우 : 상품을 사기
+
+가끔, 여러분이 cleanup 함수를 작성해도, Effect가 두 번 실행되어 나온 결과물을 사용자가 보지 못하도록 막을 수 없는 경우가 있습니다.
+예를 들어, Effect가 상품을 구매 POST 요청을 보내는 것이 있습니다:
+
+```js
+useEffect(() => {
+  // 🔴 문제: 이 Effect는 개발환경에서 두 번 발동하고, 코드에서 문제를 일으킵니다.
+  fetch('/api/buy', { method: 'POST' });
+}, []);
+```
+
+상품을 두 번 구매하고 싶지는 않을 것입니다. 그래서 여러분은 이 로직을 Effect에 넣어서는 안됩니다.
+사용자가 다른 페이지로 갔다가 뒤로가기 버튼을 누른다면 어떻게 될까요? Effect는 다시 실행될 것입니다.
+여러분은 사용자가 페이지를 *방문*할 때 상품을 구매하기를 원하지 않습니다. 사용자가 구매버튼을 *눌렀을* 때 상품을 구매하기를 원합니다
+
+구매는 렌더링에 의해 발생하지 않습니다. 구매는 특정 상호작용에 의해 발생됩니다.
+구매 상호작용(클릭)이 한번만 일어나기 때문에 구매는 오직 한 번만 실행되어야 합니다.
+**Effect를 제거하고 `/api/buy` 요청을 구매버튼의 이벤트 핸들러로 이동하세요.**
+
+```js
+function handleClick() {
+// ✅ 구매는 특정 상호작용에 의해 일어나기 때문에 구매는 이벤트입니다.
+fetch('/api/buy', { method: 'POST' });
+}
+```
+
+재마운트가 여러분의 앱의 로직에 장애를 일으키면 이는 보통 존재하던 버그를 발견하는 것으로 볼 수 있습니다.
+사용자 관점에서, 페이지를 방문하는 것은 페이지를 방문하고, 링크를 클릭하고, 뒤로가기 버튼을 누르는 것과 다르지 않아야 합니다.
+React는 개발 환경에서 컴포넌트들을 다시 마운트시켜 컴포넌트들이 이 원리를 벗어나지 않는지 확인합니다.
+
+## Effect에 모든 것을 함께 넣기
+
+이 파트에서는 Effect가 실제로 어떻게 동작하는지에 대해 "감을 느낄" 수 있도록 도와줍니다.
+
+아래 예시는 Effect가 실행되고나서 3초 후에 입력 문구가 콘솔에 나타나도록 만들기 위해 [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)을 사용합니다.
+cleanup 함수는 취소합니다. "컴포넌트 마운트하기" 버튼을 눌러서 시작해보세요.
+
+<Code src="https://codesandbox.io/s/4rybls?file=%2FApp.js&utm_medium=sandpack" />
+
+처음에 세 개의 로그를 볼 수 있을 것입니다: `Schedule "a" log`, `Cancel "a" log`, 그리고 다시 `Schedule "a" log`.
+심초 후 로그는 `a`를 말합니다.
+이 페이지에서 이미 배웠던 것처럼, 추가적인 스케줄/취소 쌍이 있는 이유는 **React가 개발환경에서 제거를 잘 실행했는지 검증하기 위해 컴포넌트를 한 번 더 재마운트하기 때문입니다**.
+
+입력란에 `abc`를 입력해 보세요.
+충분히 빠르게 입력한다면, `Schedule "ab" log` 다음에 `Cancel "ab" log`, `Schedule "abc" log`를 볼 수 있을 것입니다. 
+**React는 항상 이전 렌더의 Effect를 다음 렌더의 Effect 전에 제거합니다.**
+여러분이 빠르게 입력하더라도 한 번에 최대 한 개의 timeout만이 예약되어 있는 이유입니다.
+입력을 몇 번 수정해보고 어떻게 Effect가 제거되는지 감을 잡기 위해 console을 보면서 확인해 보세요.
+
+입력에 어떤 것이든 입력하고나서 "컴포넌트 언마운트하기"를 누르세요.
+**언마운트가 마지막 렌더의 Effect를 어떻게 제거하는지 주목하세요.**
+이 예시에서, 언마운트 시 cleanup 함수를 통해 timeout이 실행되기 전에 마지막 timeout을 제거합니다.
+
+마지막으로, timeout이 취소되지 않도록 위의 컴포넌트에서 cleanup 함수를 삭제해 보세요.
+`abcde`를 빠르게 입력해 보세요.
+여러분은 삼초 안에 무슨 일이 일어날지 예상하나요? 
+timeout 내부에 있는 `console.log(text)`가 *마지막* `text`를 프린트하고 다섯 개의 `abcde` 로그를 만들어낼까요?
+여러분의 직관을 검사하기 위해 직접 시도해 보세요!
+
+3초 후, 여러분은 다섯개의 `abcde` 로그가 아닌 일련의 로그들(`a`, `ab`, `abc`, `abcd`, 그리고 `abcde`)을 볼 것입니다.
+**각각의 Effect는 Effect에 대응하는 렌더에서 `text`를 "잡아냅니다".**
+Effect는 `text` 상태가 변경한 것을 신경쓰지 않습니다. `text = 'ab'`로 렌더링 됬을 때의 Effect는 항상 `'ab'`를 바라보고 있습니다.
+즉, 각각의 렌더링에서 Effect는 서로 독립되어 있습니다. 
+만약 이 동작이 궁금하다면, [closure](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)에 대해서 읽어보세요.
+
+:::info Deep Dive
+
+## 렌더는 각각 자신만의 Effect를 가지고 있다
+
+렌더의 결과물에 행동의 조각을 "붙이는" 것으로 `useEffect`를 생각할 수 있습니다. 아래 Effect 예시를 고려해 볼 수 있습니다:
+
+```js
+export default function ChatRoom({ roomId }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+
+  return <h1>Welcome to {roomId}!</h1>;
+}
+```
+
+사용자가 앱을 탐색하면서 무슨 일이 일어나는지 정확하게 알아봅시다.
+
+### 초기 렌더링
+
+사용자는 `<ChatRoom roomId="general" />`을 방문합니다. `roomId`가 `'general'`이란 값을 가졌다고 [가정해 봅시다](https://beta.reactjs.org/learn/state-as-a-snapshot#rendering-takes-a-snapshot-in-time):
+
+```js
+  // 첫번째 렌더링에서의 JSX 결과 (roomId = "general")
+  return <h1>Welcome to general!</h1>;
+```
+
+**Effect는 렌더링 결과물의 일부이기도 합니다.** 첫번째 렌더링의 Effect는 아래와 같이 됩니다:
+
+```js
+// 첫번째 렌더링에서의 Effect (roomId = "general")
+  () => {
+    const connection = createConnection('general');
+    connection.connect();
+    return () => connection.disconnect();
+  },
+  // 첫번쨰 렌더링에서의 의존성 (roomId = "general")
+  ['general']
+```
+
+React는 `'general'` 채팅방을 연결하는 Effect를 실행합니다.
+
+### 같은 의존성을 가진 리렌더링
+
+`<ChatRoom roomId="general" />`는 리렌더링이 일어났다고 해봅시다. JSX 결과는 똑같습니다:
+
+```js
+// 두번째 렌더링에서의 JSX 결과 (roomId = "general")
+return <h1>Welcome to general!</h1>;
+```
+
+React는 렌더링 결과물이 변하지 않았다고 보고, React는 DOM을 업데이트하지 않습니다.
+
+두번째 렌더링에서의 Effect는 아래와 같습니다:
+
+
+```js
+// 두번째 렌더링에서의 Effect  (roomId = "general")
+() => {
+  const connection = createConnection('general');
+  connection.connect();
+  return () => connection.disconnect();
+},
+// 두번쨰 렌더링에서의 의존성 (roomId = "general")
+['general']
+```
+
+React는 첫번째 렌더링에서의 `['general']`과 두번째 렌더링에서의 `['general']`을 비교합니다.
+**모든 의존성이 같기 때문에, React는 두번째 렌더링에서 Effect를 *무시*합니다.** Effect는 다시 불리지 않습니다.
+
+### 다른 의존성을 가진 리렌더링
+
+사용자가 `<ChatRoom roomId="travel" />`를 방문합니다. 이번에는 컴포넌트가 다른 JSX를 반환합니다:
+
+```js
+// 세번째 렌더링에서의 JSX 결과 (roomId = "travel")
+return <h1>Welcome to travel!</h1>;
+```
+
+React는 `"Welcome to general"`에서 `"Welcome to travel"`으로 바뀌도록 DOM을 업데이트합니다.
+
+세번째 렌더링에서의 Effect는 아래와 같습니다:
+
+```js
+// 세번째 렌더링에서의 Effect (roomId = "travel")
+() => {
+  const connection = createConnection('travel');
+  connection.connect();
+  return () => connection.disconnect();
+},
+// 세번쨰 렌더링에서의 의존성 (roomId = "travel")
+['travel']
+```
+
+React는 첫번째 렌더링에서의 `['general']`과 세번째 렌더링에서의 `['travel']`을 비교합니다.
+`Object.is('travel', 'general')`가 `false`이기 때문에 의존성이 다릅니다. Effect는 생략되지 않습니다.
+
+**세번째 렌더링에서 React가 Effect를 적용하기 전에, React는 마지막으로 실행*되었던* Effect를 제거할 필요가 있습니다.**
+두번째 렌더의 Effect는 생략되었으므로 React는 첫번째 렌더의 Effect를 제거할 필요가 있습니다.
+첫번째 렌더 부분으로 스크롤을 올려보면, 여러분은 첫번째 렌더의 cleanup 함수가 `createConnection('general')`로 생성된 커넥션에서 `disconnect()`를 실행하는 것을 볼 수 있습니다.
+이는 `'general'` 채팅 방에서 앱과의 연결을 끊는 것입니다.
+
+그 후 React는 세번째 렌더링의 Effect를 실행합니다. 이 Effect는 `'travel'` 채팅 방을 연결합니다.
+
+### 언마운트
+
+마지막으로, 사용자가 떠나고나서 `ChatRoom` 컴포넌트가 언마운트된다고 가정해 봅시다.
+React는 마지막 Effect의 cleanup 함수를 실행합니다. 마지막 Effect는 세번째 렌더에서 발생했던 것입니다.
+세번째 렌더의 cleanup 함수는 `createConnection('travel')` 커넥션을 파괴합니다. 따라서 앱은 `'travel'` 방과 연결을 끊습니다.
+
+### 개발환경에서의 동작들
+
+[엄격 모드](https://beta.reactjs.org/reference/react/StrictMode)가 켜져있을 때, React는 마운트 이후 모든 컴포넌트를 한 번 더 마운트합니다. (상태와 DOM은 보존됩니다.)
+이 동작은 경쟁 상태와 같은 오류를 빠르게 노출시키고 [여러분이 cleanup 함수가 필요한 Effect를 찾아내는 데 도움을 줍니다](https://beta.reactjs.org/learn/synchronizing-with-effects#step-3-add-cleanup-if-needed).
+추가로, React는 개발환경에서 파일을 저장할 때마다 Effect를 다시 마운트합니다. 이 두 동작들은 모두 개발환경에만 있습니다.
+
+:::
+
+## 되짚어보기
+
+- 이벤트와는 다르게, Effect는 특정 상호작용보다는 렌더링에 의해서 발생합니다.
+- Effect는 몇몇 외부 시스템(제 3의 API, 네트워크, 등)과 컴포넌트를 동기화해줍니다.
+- 기본적으로, Effect는 매 렌더 이후 실행됩니다(초기의 렌더를 포함해서).
+- React는 마지막 렌더동안 Effect의 의존성이 같은 값을 가지고 있다면 Effect를 생략합니다.
+- 여러분은 의존성을 "선택"할 수 없습니다. 의존성은 Effect 내부의 코드로 결정되어집니다.
+- 빈 의존성 배열(`[]`)은 컴포넌트의 "마운팅"(화면에 추가되는 순간)과 대응됩니다.
+- 엄격 모드가 켜 있을 때에는 React가 Effect를 스트레스 테스트하기 위해 컴포넌트를 두 번 마운트합니다. (오직 개발환경에서만!)
+- Effect가 재마운팅 때문에 문제가 생겼다면, cleanup 함수 실행을 넣어야 합니다.
+- React는 다음 Effect가 실행되기 전과 언마운트 동안 cleanup 함수를 부릅니다.
+
+:::note 문제에 도전해보세요
+
+## 1. 마운트 시 필드에 포커스를 둡니다
+
+아래 예시에서, 폼은 `<MyInput />` 컴포넌트를 렌더링합니다.
+
+`MyInput`이 화면에 나타날 때 `MyInput`이 자동으로 포커싱되도록 하기 위해 input의 [`focus()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) 방법을 사용하세요.
+이미 주석처리되어 실행되지 않지만 실제로도 동작하지 않습니다. 왜 동작하지 않는지 알아내고 고쳐보세요.
+(`autoFocus` 속성에 친숙하다면, 해당 속성이 존재하지 않다고 가정해 주세요. 밑바닥부터 같은 기능을 만들려 합니다.)
+
+<Code src="https://codesandbox.io/s/uy289j?file=%2FMyInput.js&utm_medium=sandpack" />
+
+여러분의 해결책이 동작한다는 것을 증명하기 위해, "폼 보이기" 버튼을 누르고 입력란이 포커싱을 받는지 확인해 보세요(하이라이트 처리되고 커서가 입력란 내부에 위치해 있습니다).
+"폼 숨기기"와 "폼 보이기" 버튼을 다시 눌러보세요. 입력란이 다시 하이라이팅되는지 확인하세요.
+
+`MyInput`은 모든 렌더링이 아닌 *마운트*에만 포커싱되어야 합니다. 동작이 올바르다는 것을 증명하기 위해, "폼 보이기" 버튼을 누르고나서 반복적으로 "대문자로 만들기" 체크박스를 눌러보세요.
+체크박스를 누르면 입력란에 포커싱이 되어서는 *안됩니다*.
+
+### 정답
+
+렌더링 동안 `ref.current.focus()`를 부르는 것은  `ref.current.focus()`가 *사이드 이펙트*이기 때문에 잘못됐습니다.
+사이드 이펙트는 이벤트 핸들러 내부에 위치해 있거나 `useEffect`와 함께 선언되어야 합니다. 이 경우에, 사이드 이펙트는 어떤 특정한 상호작용이 아닌 컴포넌트의 나타남으로 *발생되므로*, 사이드 이펙트를 Effect 내부에 넣는 것이 말이 됩니다.
+
+오류를 고치기 위해, `ref.current.focus()`를 Effect로 감싸야 합니다. 그리고 나서 이 Effect가 매 렌더링이 아닌 마운트 시에만 실행도록 하기 위해 빈 배열인 `[]` 의존성을 Effect에 추가합니다.
+
+<Code src="https://codesandbox.io/s/ej8om1?file=%2FMyInput.js&utm_medium=sandpack" />
+
+## 2. 조건에 맞게 필드에 포커스를 둡니다
+
+아래 폼은 두개의 `<MyInput />` 컴포넌트를 렌더링합니다.
+
+"폼 보이기" 버튼을 누르고 두번째 필드가 자동으로 포커싱되는 것에 주목하세요. 두 개의 `<MyInput />` 컴포넌트가 필드를 포커스하려고 시도하기 때문입니다. 
+여러분이 연속된 두 개의 입력필드에 `focus()`를 부르면, 마지막 필드가 항상 "이깁니다".
+
+첫번째 필드에 포커스를 두고 싶다고 가정해 봅시다. 첫번째 `MyInput` 컴포넌트는 `true`로 설정된 boolean `shouldFocus` prop을 현재 받고 있습니다.
+`MyInput`에서 `shouldFocus` prop이 `true`인 경우에만 `focus()`가 불리도록 로직을 변경해봅시다.
+
+<Code src="https://codesandbox.io/s/uqfl1d?file=%2FMyInput.js&utm_medium=sandpack" />
+
+여러분의 해결책을 확인하기 위해서, "폼 보이기"와 "폼 숨기기"를 반복적으로 눌러보세요.
+폼이 나타날 때, *첫번째* 입력란만 포커싱이 되어야 합니다. 첫번째 입력란은 `shouldFocus={true}`를 가졌고 두번째 입력란은 `shouldFocus={false}`를 가진채로 부모 컴포넌트가 렌더링하기 때문입니다.
+또한 두 개의 입력란들이 모두 동작하고 여러분이 입력이 가능한지 확인해 보세요.
+
+### 힌트
+
+여러분은 Effect를 조건에 맞게 선언할 수 없지만 Effect는 조건 로직을 포함할 수 있습니다.
+
+### 정답
+
+Effect 내부에 조건 로직을 넣으세요. Effect 내부에 `shouldFocus`를 사용하기 때문에 의존성에 `shouldFocus`를 넣을 필요가 있습니다. 
+(이는 몇몇 입력란의 `shouldFocus`가 `false`에서 `true`로 바뀐다면, 마운트 이후 입력란은 포커스될 것을 의미합니다.)
+
+<Code src="https://codesandbox.io/s/rhxxow?file=%2FMyInput.js&utm_medium=sandpack" />
+
+## 3. 두 번 실행되는 interval를 수정합니다
+
+`Counter` 컴포넌트는 매초 증가하는 카운터를 보여줍니다. 
+마운트 되었을 때, `Counter` 컴포넌트는 [`setInterval`](https://developer.mozilla.org/en-US/docs/Web/API/setInterval)를 부릅니다.
+`setInterval`은 매초 `onTick`이 실행되도록 합니다. `onTick` 함수는 카운터를 증가시킵니다.
+
+하지만, 매초 한번만 증가시키는 것 대신에 두 번 증가시킵니다. 왜 이런 현상이 일어나는 걸까요?
+오류의 원인을 밝혀내고 고쳐보세요.
+
+<Code src="https://codesandbox.io/s/sv75dd?file=%2FCounter.js&utm_medium=sandpack" />
+
+### 힌트
+
+`setInterval`은 interval ID를 반환한다는 것을 유념하세요.
+따라서 여러분은 interval을 멈추기 위해 [`clearInterval`](https://developer.mozilla.org/en-US/docs/Web/API/clearInterval)를 넘길 수 있습니다.
+
+### 정답
+
+[엄격 모드](https://beta.reactjs.org/reference/react/StrictMode)가 켜져있을 때(이 사이트에 있는 sandbox 안의 코드처럼), React는 개발환경에서 한 번 더 각각의 컴포넌트를 마운트합니다.
+이 엄격 모드가 interval이 두 번 실행되도록 만들었고 매초 counter가 두 번 증가한 이유입니다.
+
+하지만, React의 동작은 오류의 *원인*이 아닙니다. 오류는 이미 코드에 있었습니다.
+React의 동작은 오류를 더 잘 찾을 수 있도록 만들었습니다. 실제 원인은 이 Effect가 프로세스를 시작하지만 Effect를 제거하는 방식이 제공되어 있지 않습니다.
+
+이 코드를 수정하기 위해, `setInterval`에서 반환된 interval ID를 저장하고 [`clearInterval`](https://developer.mozilla.org/en-US/docs/Web/API/clearInterval)를 이용한 cleanup 함수를 실행합니다.
+
+<Code src="https://codesandbox.io/s/o25bp3?file=%2FCounter.js&utm_medium=sandpack" />
+
+개발환경에서, React는 여러분이 제거를 잘 실행했는지 확인하기 위해 컴포넌트를 한 번 더 마운트할 것입니다.
+따라서 `setInterval`이 불린다면, 즉시 `clearInterval`도 불리우고, 다시 `setInterval`이 불립니다.
+운영환경에서는 오직 한번만 `setInterval`이 불립니다.
+두 경우 모두 사용자가 바라보는 측면에서는 같습니다. 카운터는 매초 증가합니다.
+
+## 4. Effect 내부의 데이터 가져오기를 수정합니다
+
+아래 컴포넌트는 선택된 사람의 전기를 보여줍니다.
+컴포넌트는 마운트될 때와 `person`이 변경될 때마다 비동기 함수인 `fetchBio(person)`를 불러서 전기를 가져옵니다
+비동기 함수는 결국 문자열을 주는 [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)를 반환합니다.
+데이터 가져오기가 끝났을 때, 컴포넌트는 `setBio`를 불러서 선택 상자 아래에 문자를 나타냅니다.
+
+<Code src="https://codesandbox.io/s/vm6oex?file=%2FApp.js&utm_medium=sandpack" />
+
+이 코드에는 오류가 있습니다. "Alice"를 선택해 보세요. 그리고나서 "Bob"을 선택하고 바로 즉시 "Taylor"를 선택하세요.
+충분히 빠르게 작업한다면, 여러분은 오류를 발견할 수 있을 것입니다. Taylor가 선택되었지만 "This is Bob’s bio."라고 쓰여 있습니다.
+
+왜 이런 일이 일어났을까요? Effect 내부에서 오류를 수정해 보세요.
+
+### 힌트
+
+만약 Effect가 비동기적으로 무언가를 가져온다면, 보통 cleanup 함수가 필요합니다.
+
+### 정답
+
+오류를 발생하기 위해서는 아래 순서로 실행해야 합니다.
+
+- `'Bob'`을 선택하면 `fetchBio('Bob')`가 실행됩니다
+- `'Taylor'`을 선택하면 `fetchBio('Taylor')`가 실행됩니다
+- **`'Bob'` 데이터를 가져오기 전에 `'Taylor'` 데이터를 가져오는 것을 완료합니다**
+- `'Taylor'` 렌더링의 Effect가 `setBio('This is Taylor’s bio')`를 실행합니다
+- `'Bob'` 데이터를 가져오는 것이 완료됩니다
+- `'Bob'` 렌더링의 Effect가 `setBio('This is Bob’s bio')`를 실행합니다
+
+Taylor가 선택되었지만 Bob의 전기가 보여진 이유입니다. 이런 오류들을 [경쟁 상태](https://en.wikipedia.org/wiki/Race_condition)라고 부릅니다.
+두 개의 비동기 동작들이 서로 "경쟁"하며 예상하지 못한 순서로 도착하기 때문입니다.
+
+이 경쟁상태를 고치기 위해서 cleanup 함수를 추가해야 합니다.
+
+<Code src="https://codesandbox.io/s/43lcvp?file=%2FApp.js&utm_medium=sandpack" />
+
+각각의 렌더 Effect는 자신만의 `ignore` 변수를 가지고 있습니다. 
+초기에 `ignore` 변수는 `false`로 설정되어 있습니다.
+하지만, Effect가 삭제되고(여러분이 다른 사람을 선택했을 때와 같이), Effect의 `ignore` 변수가 `true`가 되었습니다.
+따라서 이제 요청이 완료되는 순서가 중요하지 않습니다. 마지막 사람의 Effect만 `ignore`이 `false`로 설정되어 있어 `setBio(result)`를 부를 것입니다.
+과거의 Effect들은 제거되었으므로 `if (!ignore)`이 `setBio`를 부르는 것을 막을 것입니다.
+
+- `'Bob'`을 선택하면 `fetchBio('Bob')`가 실행됩니다
+- `'Taylor'`을 선택하면 `fetchBio('Taylor')`가 실행되고 **이전의 (Bob의) Effect를 제거합니다**
+- `'Bob'` 데이터를 가져오기 전에 `'Taylor'` 데이터를 가져오는 것을 완료합니다
+- `'Taylor'` 렌더링의 Effect가 `setBio('This is Taylor’s bio')`를 실행합니다
+- `'Bob'` 데이터를 가져오는 것이 완료됩니다
+- `'Bob'` 렌더링의 Effect는 **`ignore`이 `true`로 설정되어 있기 때문에 아무것도 하지 않습니다**
+
+추가로 오래된 API 요청의 결과를 무시하기 위해, 여러분은 더이상 필요하지 않은 요청들을 취소하는 [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)를 사용할 수 있습니다.
+하지만, `AbortController`만으로 경쟁상태를 막기에는 부족합니다.
+더 많은 비동기 단계들이 데이터 가져오기 이후 연결되어있을 수 있습니다. 따라서 `ignore`와 같은 명시적인 플래그를 사용하는 것이 이러한 유형의 문제들을 해결하는 가장 신뢰할 수 있는 방식입니다.
+
+:::
+
+
+
+
+
+
+
+
+
+
+
