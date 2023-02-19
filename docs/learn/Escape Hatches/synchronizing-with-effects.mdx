@@ -225,7 +225,7 @@ React는 이전 렌더링동안 갖고 있던 값과 비교해서 명시한 _모
 React는 `[Object.is](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)` 비교를 사용해서 의존 값들을 비교합니다.
 더 자세한 내용은 [`useEffect` API](https://beta.reactjs.org/reference/react/useEffect#reference)를 확인해보세요.
 
-**의존성을 "선택"할 수 없다는 것을 알아두세요.** 만약 명시해놓은 의존성들과 Effect 내부의 코드에 기반했을 떄 React가 생각하는 의존성이 일치하지 않는다면 lint error를 얻게 될 것입니다.
+**의존성을 "선택"할 수 없다는 것을 알아두세요.** 만약 명시해놓은 의존성들과 React가 생각하는 Effect 내부의 코드에 기반한 의존성이 일치하지 않는다면 lint error를 얻게 될 것입니다.
 이는 코드의 버그를 잡는 데 도움이 됩니다. Effect가 몇 개의 값들을 사용하지만 그 값들이 변할 떄 Effect가 돌아가길 원하지 *않는다*면, [Effect코드가 그 의존성을 "필요"로 하지 않도록 직접 코드를 수정](https://beta.reactjs.org/learn/lifecycle-of-reactive-effects#what-to-do-when-you-dont-want-to-re-synchronize)해야 할 것입니다.
 
 :::danger 주의할 점
