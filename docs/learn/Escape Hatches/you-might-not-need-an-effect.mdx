@@ -1,0 +1,437 @@
+import { Code } from '../../../src/components/Code';
+
+
+## 부모 컴포넌트에게 상태 변화를 알려주기
+
+지금 우리가 `Toggle` 컴포넌트를 작성중이라고 가정해봅시다.
+이 컴포넌트는 내부 상태로 `true` 혹은 `false` 값을 가지는 `isOn`을 갖고 있습니다.
+이 변수의 상태를 바꾸는 방법은 클릭이나 드래그 등 여러 방법이 있습니다. 우리가 원하는 것은 `Toggle` 컴포넌트의 내부 상태가 바뀌었을 때
+이를 부모 컴포넌트에게 알려주는 것이므로 우리는 `onChange` 이벤트를 노출해 effect에서 호출하도록 합니다.
+
+```jsx
+function Toggle({ onChange }) {
+  const [isOn, setIsOn] = useState(false);
+
+  // 🔴 onChange 핸들러가 너무 늦게 동작하는 것은 피해야 합니다.
+  useEffect(() => {
+    onChange(isOn);
+  }, [isOn, onChange])
+
+  function handleClick() {
+    setIsOn(!isOn);
+  }
+
+  function handleDragEnd(e) {
+    if (isCloserToRightEdge(e)) {
+      setIsOn(true);
+    } else {
+      setIsOn(false);
+    }
+  }
+
+  // ...
+}
+```
+
+이전과 같이, 이는 이상적인 구현은 아닙니다. `Toggle` 컴포넌트는 그가 가진 상태를 제일 먼저 업데이트 하고,
+React는 스크린을 업데이트 합니다. 그리고 React는 effect를 호출하는데, 여기서 부모 컴포넌트로부터 전달받은 `onChange` 함수가 호출됩니다.
+이제 부모 컴포넌트는 자신의 상태를 업데이트하고, 또 다른 렌더 패스를 시작합니다. 한번에 모든 작업을 끝내는게 더 좋습니다.
+
+Effect를 지우는 대신 같은 이벤트 핸들러에서 *두* 컴포넌트의 상태를 동시에 업데이트 해봅시다.
+
+```jsx
+function Toggle({ onChange }) {
+  const [isOn, setIsOn] = useState(false);
+
+  function updateToggle(nextIsOn) {
+    // ✅ 한 이벤트를 처리하며 모든 업데이트를 수행하기 때문에 좋습니다.
+    setIsOn(nextIsOn);
+    onChange(nextIsOn);
+  }
+
+  function handleClick() {
+    updateToggle(!isOn);
+  }
+
+  function handleDragEnd(e) {
+    if (isCloserToRightEdge(e)) {
+      updateToggle(true);
+    } else {
+      updateToggle(false);
+    }
+  }
+
+  // ...
+}
+```
+
+이 접근 방법에서 `Toggle` 컴포넌트와 그의 부모 컴포넌트는 이벤트를 처리하는 과정에서 그들의 상태를 업데이트 합니다.
+React는 서로 다른 컴포넌트 변경 사항을 [batch 형태로 업데이트](https://beta.reactjs.org/learn/queueing-a-series-of-state-updates) 하기 때문에, 결과적으로 하나의 렌더 패스로 처리될 수 있습니다.
+
+아니면 아예 상태를 다 지워버리고, 대신 부모 컴포넌트로부터 `isOn`을 내려받을 수도 있습니다.
+
+```jsx
+// ✅ 이 방법 또한 컴포넌트가 전적으로 부모 컴포넌트에 의해 제어되기 때문에 좋습니다.
+function Toggle({ isOn, onChange }) {
+  function handleClick() {
+    onChange(!isOn);
+  }
+
+  function handleDragEnd(e) {
+    if (isCloserToRightEdge(e)) {
+      onChange(true);
+    } else {
+      onChange(false);
+    }
+  }
+
+  // ...
+}
+```
+
+["상태를 위로 올리는 것"](https://beta.reactjs.org/learn/sharing-state-between-components)은 부모 컴포넌트로 하여금 자신의 상태로 `Toggle` 컴포넌트를 완전히 제어하게끔 해줍니다.
+이는 부모 컴포넌트가 더 많은 로직을 갖게 되지만, 전체적으로 보면 더 적은 상태면 충분하기 때문에 걱정거리가 줄어듭니다.
+만약 두개의 서로 다른 상태 변수들을 동기화해야 할 일이 있다면, 상태를 위로 올려야 할 수도 있다는 신호입니다.
+
+
+## 부모 컴포넌트에게 데이터 전달하기
+
+`Child` 컴포넌트는 데이터를 fetch한 다음 effect 내부에서 `Parent`에게 전달하고 있습니다.
+
+```jsx
+function Parent() {
+  const [data, setData] = useState(null);
+  // ...
+  return <Child onFetched={setData} />;
+}
+
+function Child({ onFetched }) {
+  const data = useSomeAPI();
+  // 🔴 데이터를 effect 내에서 부모 컴포넌트에게 전달하는 것은 피해야 합니다.
+  useEffect(() => {
+    if (data) {
+      onFetched(data);
+    }
+  }, [onFetched, data]);
+  // ...
+}
+```
+
+React에서 데이터는 부모로부터 자식으로 전달됩니다. 만약 스크린에서 무언가 잘못된 부분을 찾았다면, 컴포넌트 체인을 따라 올라가 어떤 컴포넌트가 잘못된 prop이나 상태를 전달해주는지 추적하면 됩니다.
+자식 컴포넌트가 부모 컴포넌트의 상태를 effect 내부에서 변경하려 한다면 데이터 흐름을 추적하는 것은 매우 어려워질 것입니다.
+부모 컴포넌트와 자식 컴포넌트 모두 같은 데이터를 필요로 하는 경우엔 부모 컴포넌트에서 데이터를 fetch하고 이를 자식 컴포넌트에게 내려주는 방식을 선택해야 합니다.
+
+```jsx
+function Parent() {
+  const data = useSomeAPI();
+  // ...
+  // ✅ 데이터를 자식 컴포넌트에게 내려주기 때문에 좋습니다.
+  return <Child data={data} />;
+}
+
+function Child({ data }) {
+  // ...
+}
+```
+
+이렇게 하면 데이터 흐름을 더 예상 가능하도록 만들 수 있습니다. 데이터가 부모 컴포넌트로부터 자식 컴포넌트로 전달되도록 말이죠.
+
+
+## 외부 저장소 구독하기
+
+때때로 컴포넌트는 써드 파티 라이브러리나 브라우저의 빌트인 API처럼 React 상태 외부에 있는 데이터를 구독해야 할 수도 있습니다.
+이 데이터는 React의 관리로부터 벗어나있기 때문에 컴포넌트가 데이터를 구독하도록 수동으로 설정해줘야 합니다. 보통 이 작업은 effect 내에서 일어납니다.
+
+```jsx
+function useOnlineStatus() {
+  // effect 내에서 직접 저장소를 구독하는 방법은 이상적인 방법이 아닙니다.
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    function updateState() {
+      setIsOnline(navigator.onLine);
+    }
+
+    updateState();
+
+    window.addEventListener('online', updateState);
+    window.addEventListener('offline', updateState);
+    return () => {
+      window.removeEventListener('online', updateState);
+      window.removeEventListener('offline', updateState);
+    };
+  }, []);
+  return isOnline;
+}
+
+function ChatIndicator() {
+  const isOnline = useOnlineStatus();
+  // ...
+}
+```
+
+이 컴포넌트는 외부 데이터 저장소를 구독하고 있습니다(이 예시에서는 브라우저의 `navigator.onLine` API 입니다).
+이 API는 서버에 존재하지 않기 때문에(그래서 초기 HTML을 만드는데도 이용할 수 없습니다), 최초 상태는 `true`입니다.
+그리고 브라우저에서 데이터 저장소에 저장된 값이 변경된다면, 컴포넌트도 그 상태를 업데이트 합니다.
+
+이런 상황에서는 effect를 사용하는게 흔한 방법이지만, React는 effect를 쓰는 방법 대신 외부 저장소를 구독하기 위한 빌트인 훅을 제안하고 있습니다.
+Effect를 제거하고 [`useSyncExternalStore`](https://beta.reactjs.org/reference/react/useSyncExternalStore)를 호출하는 방법으로 바꿔봅시다.
+
+```jsx
+function subscribe(callback) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+
+function useOnlineStatus() {
+  // ✅ 내장된 훅으로 외부 저장소를 구독하기 때문에 좋습니다.
+  return useSyncExternalStore(
+    subscribe, // React는 같은 함수를 전달하는 한 저장소를 새로 구독하지 않습니다.
+    () => navigator.onLine, // 클라이언트에서 값을 얻을 수 있는 방법
+    () => true // 서버에서 값을 얻을 수 있는 방법
+  );
+}
+
+function ChatIndicator() {
+  const isOnline = useOnlineStatus();
+  // ...
+}
+```
+
+이 방법은 effect 내에서 수동으로 React state와 동기화 하는 방법보다 에러가 적게 발생합니다.
+일반적으로 위처럼 `useOnlineStatus()` 커스텀 훅을 만들어 사용하면 같은 코드를 여러 컴포넌트에서 반복해서 작성할 필요가 없게 됩니다.
+[여기서 React 컴포넌트에서 외부 저장소를 구독하는 방법에 대해서 더 읽어볼 수 있습니다.](https://beta.reactjs.org/reference/react/useSyncExternalStore)
+
+
+## 데이터 fetch 하기
+
+수많은 앱에서 effect를 데이터를 fetch 하는데 사용하고 있습ㄴ디ㅏ. 이는 꽤 일반적인 데이터 fetch 방법으로, 아래와 같이 사용합니다.
+
+```jsx
+function SearchResults({ query }) {
+  const [results, setResults] = useState([]);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    // 🔴 cleanup 로직 없이 fetch 하는 것은 피해야 합니다.
+    fetchResults(query, page).then(json => {
+      setResults(json);
+    });
+  }, [query, page]);
+
+  function handleNextPageClick() {
+    setPage(page + 1);
+  }
+  // ...
+}
+```
+
+Fetch 로직을 이벤트 핸들러로 옮길 필요는 *없습니다.*
+
+이는 이벤트 핸들러에 로직을 넣어야 했던 이전의 예시들과는 모순되는 것처럼 보일 수도 있습니다.
+하지만, *입력 이벤트*를 처리할 때 주된 동작이 fetch를 하기 위함이 아님을 고려해야 합니다. 검색창에 입력된 값은 URL을 통해 미리 채워져 있고,
+사용자는 아마 검색창을 건드리지 않고 뒤로가기 혹은 앞으로가기를 통해 탐색할 것입니다. `page`와 `query`가 어디서 오는 데이터인지는 중요하지 않습니다.
+반면에 이 컴포넌트는 현재 사용자에게 보여지고 있고, 여러분은 `results`가 현재 `page`와 `query`에 따른 원격 데이터와 [동기화](https://beta.reactjs.org/learn/synchronizing-with-effects)되길 바랄 것입니다.
+그래서 effect를 사용합니다.
+
+하지만 위 코드는 버그가 있습니다. `"hello"`를 빠르게 입력한다고 가정해봅시다. 그럼 `query`는 `"h"`로부터 `"he"`, `"hel"`, `"hell"`, `"hello"`로 변할 것입니다.
+이는 각각의 fetch를 일으킬 것이지만, 응답이 순서대로 온다는 보장이 없습니다. 예를 들어 `"hell"`의 응답이 `"hello"`의 응답보다 늦게 도착한다고 가정해봅시다.
+우리는 `setResults()`를 가장 마지막에 호출하기 때문에 화면에 보여지는 결과는 예상과는 전혀 다르게 될 것입니다.
+우리는 이를 ["race condition"](https://en.wikipedia.org/wiki/Race_condition)이라고 부릅니다. 두 개의 서로 다른 요청이 서로 "경쟁"하며 예상과는 다른 순서로 보여질 수 있는 것입니다.
+
+**Race condition 문제를 해결하기 위해서는 [clean up](https://beta.reactjs.org/learn/synchronizing-with-effects#fetching-data) 함수를 통해 만료된 응답을 무시해주면 됩니다.**
+
+```jsx
+function SearchResults({ query }) {
+  const [results, setResults] = useState([]);
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    let ignore = false;
+    fetchResults(query, page).then(json => {
+      if (!ignore) {
+        setResults(json);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [query, page]);
+
+  function handleNextPageClick() {
+    setPage(page + 1);
+  }
+  // ...
+}
+```
+
+이렇게 하면 effect에서 데이터를 fetch할 때, 마지막 요청을 제외한 모든 요청에 대한 응답은 무시됩니다.
+
+Race condtion을 제어하는 것은 데이터를 fetch할 때만 어려운 것이 아닙니다. 아마 여러분은 응답으로 오는 데이터를 어떻게 캐싱할지(유저가 뒤로가기 했을때 spinner가 보이지 않고 즉시 화면이 보이게 하기 위해),
+어떻게 데이터를 서버에서 fetch 할지(서버에서 렌더링한 초기 HTML이 spinner 대신 fetch된 데이터를 보여주게 하기 위해), 그리고 어떻게 네트워크 워터폴을 피할지(자식 컴포넌트에서 데이터를 fetch할 때 부모 컴포넌트의 fetch가 끝나는것을 기다리지 않고도 먼저 fetch를 시작할 수 있도록 하기 위해)에 대해서도 고민할 수 있습니다.
+**이런 고민들은 React 뿐만이 아니라 다른 어떤 UI 라이브러리에도 적용되어 있습니다. 이 문제를 푸는 것은 쉽지 않고, 모던한 [프레임워크](https://beta.reactjs.org/learn/start-a-new-react-project#building-with-a-full-featured-framework)들에서 컴포넌트의 effect에 직접 fetch 로직을 작성하는 것보다 더 효과적이고 빌트인된 데이터 fetch 매커니즘들을 소개하고 있습니다.**
+
+만약 이런 프레임워크들을 사용하지 않으면서 (그리고 그런걸 스스로 만들지 않으면서) 데이터 fetch 로직을 더 간편하게 만들고 싶다면,
+아래 예시와 같이 fetch 로직을 추출해 커스텀 훅으로 만드는 것도 고려해보시기 바랍니다.
+
+```jsx
+function SearchResults({ query }) {
+  const [page, setPage] = useState(1);
+  const params = new URLSearchParams({ query, page });
+  const results = useData(`/api/search?${params}`);
+
+  function handleNextPageClick() {
+    setPage(page + 1);
+  }
+  // ...
+}
+
+function useData(url) {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+    fetch(url)
+      .then(response => response.json())
+      .then(json => {
+        if (!ignore) {
+          setData(json);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [url]);
+  return data;
+}
+```
+
+아마 여러분은 에러 핸들링이나 내용의 로딩 상태를 추적하는 로직을 추가하길 원할 수도 있습니다.
+그럼 이런 훅을 스스로 만들거나 React 생태계에 이미 존재하는 여러 해법들 중 하나를 골라 사용해볼 수도 있습니다.
+**이런 방법을 프레임워크의 내장 데이터 fetch 매커니즘을 사용하지 않고 단독으로 사용하면 덜 효과적일 수도 있지만,
+데이터 fetch 로직을 커스텀 훅으로 이동시키면 이후에 다른 효과적인 데이터 fetch 전략을 도입하기 수월해질 수 있습니다.**
+
+일반적으로, effect를 이용한 코드를 작성해야 하는 경우에는 항상 로직들을 주시하고 추출해 `useData`같은 더 선언적이고 목적성을 가진 커스텀 훅을 만들어내는 것에 집중해야 합니다.
+`useEffect`를 직접 호출하는 횟수가 줄어들수록 애플리케이션을 유지하기 위한 노력이 적게 들 것입니다.
+
+## 되짚어보기
+- 만약 렌더링 도중에 계산이 가능하다면, effect를 쓰지 마세요.
+- 비용이 큰 연산을 캐시해야 한다면 `useEffect` 대신 `useMemo`를 사용하세요.
+- 컴포넌트 트리 전체를 리셋해야 한다면, 다른 `key`를 전달하세요.
+- prop 변경에 의존하는 일부의 상태를 변경하려 한다면, 렌더링 중에 변경학세요.
+- 컴포넌트가 *화면에 그려졌기* 때문에 실행되어야 하는 코드는 effect에 있어야 하지만, 그 외의 코드는 이벤트 핸들러에 있어야 합니다.
+- 만약 하나의 상태에 대해 여러 컴포넌트가 업데이트 한다면, 하나의 이벤트 핸들러에서 업데이트 하는게 더 낫습니다.
+- 언제든 서로 다른 컴포넌트들에서 상태 변수를 동기화 하려 한다면, 상태를 상위 컴포넌트로 올리는 것을 고려해보세요.
+- 데이터를 effect 내에서 fetch 할 수 있지만, cleanup 함수를 작성해 race condition이 발생하지 않도록 해야 합니다.
+
+
+::: 문제에 도전해보세요
+
+## 1. Effect 없이 데이터 변형하기
+
+아래의 `TodoList`는 할 일들의 리스트를 보여주고 있습니다. "Show only active todos" 체크박스가 활성화 되면, 완료된 할 일들은 리스트에서 보여지지 않게 됩니다.
+숨겨진 할 일들의 갯수와는 상관 없이, footer는 아직 완료되지 않은 할 일의 갯수를 보여줍니다.
+
+불필요한 상태와 effect를 제거해서 컴포넌트를 간단하게 만들어보세요.
+
+<Code src="https://codesandbox.io/embed/nameless-glade-1b7wlz?fontsize=14&hidenavigation=1&theme=dark" />
+
+### 힌트
+만약 렌더링 중에 계산이 가능하다면, 상태나 이를 업데이트 하기 위한 effect는 필요하지 않습니다.
+
+### 정답
+이 코드에는 두 조각의 상태가 있습니다. `todos` 배열과 체크박스가 체크 되었는지를 나타내는 `showActive` 상태 변수입니다.
+다른 모든 상태 변수들은 [중복](https://beta.reactjs.org/learn/choosing-the-state-structure#avoid-redundant-state)이고 렌더링 동안에 계산이 가능합니다.
+`footer`도 마찬가지입니다. 이를 둘러싼 JSX 안으로 이동시킬 수 있습니다.
+
+<Code src="https://codesandbox.io/embed/fancy-darkness-qf5rhw?fontsize=14&hidenavigation=1&theme=dark" />
+
+
+## 2. Effect 없이 계산 결과 캐싱하기
+
+아래 예시에서 할 일들을 필터링 하는 로직은 `getVisibleTodos()`라는 분리된 함수로 추출되었습니다.
+이 함수는 `console.log()`를 내부에 포함하고 있고, 이를 통해 함수가 호출되었는지 알 수 있습니다.
+"Show only active todos"를 껐다 켬으로써 `getVisibleTodos()`가 다시 호출되는 것을 확인해보세요.
+이는 체크박스를 켜고 끄는 과정에서 화면에 그려질 할 일들이 변경되기 때문에 충분히 예상 가능합니다.
+
+여러분이 할 일은 `visibleTodos`를 재계산하는 `TodoList` 컴포넌트의 effect를 제거하는 것입니다.
+하지만 `getVisibleTodos()`는 입력창에 입력하는 과정에서 재실행되어서는 안됩니다(그리고 어떤 로그도 출력해서는 안됩니다).
+
+<Code src="https://codesandbox.io/embed/wizardly-lovelace-tw5bs4?fontsize=14&hidenavigation=1&theme=dark" />
+
+### 힌트
+한가지 방법은 `useMemo`를 추가해 화면에 노출되는 할 일들을 캐싱하는 것입니다.
+이보다 덜 명시적인 방법도 존재합니다.
+
+### 정답
+상태 변수와 effect를 제거하고, 대신 `useMemo`를 호출해 `getVisibleTodos()`의 결과를 캐싱합니다.
+
+<Code src="https://codesandbox.io/embed/wizardly-ully-kbk9xy?fontsize=14&hidenavigation=1&theme=dark" />
+
+이 변화로 인해 `getVisibleTodos()`는 `todos`나 `showActive`가 변경될 때만 다시 호출됩니다.
+입력창에 입력하는 것은 `text` 상태 변수만 바꿀 뿐이고, 따라서 `getVisibleTodos()`를 다시 호출하지 않습니다.
+
+`useMemo`를 사용하지 않는 또 다른 방법도 있습니다.
+`text` 상태 변수가 할 일들의 배열에 영향을 끼치지 못하기 때문에, 이 form을 추출해 `NewTodo`라는 분리된 컴포넌트를 만들면 됩니다.
+그리고 `text` 상태 변수를 여기로 이동시킵니다.
+
+<Code src="https://codesandbox.io/embed/stoic-chebyshev-j7m1pe?fontsize=14&hidenavigation=1&theme=dark" />
+
+이 접근 방식 또한 마찬가지로 요구사항을 만족시킵니다. 입력창에 입력을 하면 `text` 상태 변수만 업데이트 됩니다.
+`text` 상태 변수가 `NewTodo` 컴포넌트에 있기 때문에, 부모 컴포넌트인 `TodoList` 컴포넌트는 다시 렌더링되지 않을 것입니다.
+이로 인해 `getVisibleTodos()`도 여러분의 입력에 따라 다시 호출되지 않습니다. (`TodoList`가 다른 이유로 인해 리렌더링 된다면 호출되긴 합니다.)
+
+
+## 3. Effect 없이 상태 초기화 하기
+
+아래의 `EditContact` 컴포넌트는 `{ id, name, email }` 형태의 연락처 객체를 `savedContact` prop으로 전달 받습니다.
+이름과 이메일을 수정하고 저장 버튼을 누르면 form이 업데이트 되며 수정된 이름으로 바뀝니다.
+Reset 버튼을 누르면, 작성중이던 모든 form의 변경사항들이 폐기됩니다. 이 UI를 잠시 조작하며 친숙해져봅시다.
+
+상단의 버튼을 통해 연락처를 선택하면 form에는 연락처의 상세 정보가 반영됩니다.
+이는 `EditContact.js`의 effect에서 일어납니다. 이 effect를 제거해봅시다. `savedContact.id`가 바뀌었을 때 form을 초기화 할 수 있는 다른 방법을 찾아보세요.
+
+<Code src="https://codesandbox.io/embed/objective-leftpad-3c3o5l?fontsize=14&hidenavigation=1&theme=dark" />
+
+### 힌트
+만약 React에게 `savedContact.id`가 달라졌음을 알려줄 수 있다면 좋을 것입니다. `EditContact`의 form은 개념적으로 **다른 연락처의 form**이 되고, 상태를 유지하지 않게 될 것입니다.
+떠오르는 방법이 있지 않나요?
+
+### 정답
+`EditContact` 컴포넌트를 둘로 나눕니다. 모든 form의 상태를 내부의 `EditForm` 컴포넌트로 이동시키십니다.
+외부의 `EditContact` 컴포넌트를 export 하고, `EditContact` 컴포넌트에 `key`로 `savedContact.id`를 전달합니다.
+결과적으로 내부의 `EditForm` 컴포넌트는 다른 연락처를 선택했을 때 모든 form 상태를 초기화 하고 새로운 DOM을 그리게 됩니다.
+
+
+## 4. Effect 없이 form 제출하기
+
+이 `Form` 컴포넌트는 친구에게 메시지를 보낼 수 있도록 해줍니다. form을 제출하면 `showForm` 상태 변수가 `false`로 변경됩니다.
+이는 `sendMessage(message)`를 호출하는 effect를 유도하게 되고, 메시지를 보내게 됩니다(콘솔에서 확인할 수 있습니다).
+메시지가 보내지면, "Open chat" 버튼과 함께 "Thank you" 대화창이 나타나고, 다시 form으로 돌아가게 됩니다.
+
+이 앱의 사용자들은 메시지를 너무 많이 보냅니다. 채팅을 약간 더 어렵게 만들기 위해 여러분은 "Thank you" 메시지를 *먼저* 보여주고 그 다음 form을 보여주려 합니다.
+`showForm` 상태 변수를 `false`로 초기화 하지 않고 `true`로 초기화 합시다. 이 변경사항이 반영되는 즉시 콘솔은 빈 메시지가 보내졌다고 출력할 것입니다.
+이 로직에 무언가 잘못된 부분이 있습니다!
+
+이 문제의 원인은 무엇이고 어떻게 고칠 수 있을까요?
+
+<Code src="https://codesandbox.io/embed/charming-dijkstra-ih81ok?fontsize=14&hidenavigation=1&theme=dark" />
+
+### 힌트
+메시지가 보내진 것은 유저가 "Thank you" 대화창을 봤기 *때문*일까요? 아니면 다른 원인이 있기 때문일까요?
+
+### 정답
+`showForm` 상태 변수는 form을 보여줄지 "Thank you" 대화창을 보여줄지를 결정합니다.
+하지만 메시지가 보내진 것은 "Thank you" 대화창이 *보여졌기* 때문이 아닙니다. 여러분은 사용자가 *form을 제출했기 때문에* 메시지가 전송되는 것을 원합니다.
+잘못 연결된 effect를 제거하고 `sendMessage`를 `handleSubmit` 이벤트 핸들러 내부로 이동시키세요.
+
+<Code src="https://codesandbox.io/embed/intelligent-williamson-5fmk1x?fontsize=14&hidenavigation=1&theme=dark" />
+
+이 코드에서 오직 *form을 제출하는 것*(이벤트)만이 메시지를 보낸다는 것을 확인하세요.
+이는 `showForm`의 초기값이 `true`일때나 `false`일때나 상관 없이 모두 잘 동작합니다. (`false`로 바꿔도 콘솔에 아무 메시지가 찍히지 않음을 확인하세요.)
+
+:::
+
+
+
