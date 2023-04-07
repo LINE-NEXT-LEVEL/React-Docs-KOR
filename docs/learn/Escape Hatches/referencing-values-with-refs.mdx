@@ -1,0 +1,279 @@
+import {Code} from "../../../src/components/Code";
+
+# Ref를 이용해 값을 기억하기
+
+컴포넌트가 어떤 정보를 "기억"하게 만들면서 그 정보가 [새로운 렌더링을 유발](https://beta.reactjs.org/learn/render-and-commit)하지 않기를 원한다면, *ref*를 사용해보세요.
+
+:::info 여러분이 배울 것
+- 컴포넌트에 ref를 추가하는 법
+- ref의 값을 업데이트하는 법
+- ref가 상태와 다른 점
+- ref를 안전하게 사용하는 법
+:::
+
+## 컴포넌트에 ref를 추가하기
+
+React의 `useRef` 훅을 import해서 컴포넌트에 ref를 추가할 수 있습니다:
+
+```javascript
+import { useRef } from 'react';
+```
+
+컴포넌트 내부에서 `useRef` 훅을 부르고 기억하고 싶은 초기값을 인수 하나로 넘겨줍니다.
+예를 들어, 아래 코드는 ref에 0을 넘겨 주었습니다.
+
+```javascript
+const ref = useRef(0);
+```
+
+`useRef`는 아래와 같이 객체를 넘겨줍니다:
+
+```javascript
+{ 
+  current: 0 // The value you passed to useRef
+}
+```
+
+// 이미지
+
+`ref.current` 특성을 통해 ref의 현재 값에 접근할 수 있습니다.
+이 값은 의도적으로 변경 가능합니다, 즉 그 값을 읽고 변경할 수 있다는 것을 의미합니다.
+React가 추적하지 못하는 컴포넌트의 비밀 저장소와 같습니다.
+(즉, ref가 React의 단방향 데이터 흐름에서 "벗어났다"는 것을 의미합니다. 벗어난 것들에 대한 글이 더 많이 있습니다.)
+
+이 코드에서 버튼은 매번 클릭할 때마다 `ref.current`를 늘릴 것입니다.
+
+<Code src="https://codesandbox.io/s/2yh3vt?file=%2FApp.js&utm_medium=sandpack" />
+
+ref는 숫자를 가리키지만, [상태](https://beta.reactjs.org/learn/state-a-components-memory)와 같이 문자열, 객체, 또는 함수 중 어떤 것이든 나타낼 수 있습니다.
+상태와 달리, ref는 읽고 수정할 수 있는 `current` 특징을 가진 순수 JavaScrpt 객체입니다.
+
+**컴포넌트가 매 증가마다 리렌더링되지 않는다"는 것에 주목하세요.
+상태와 같이, ref는 리렌더링 사이에 React에 의해 유지됩니다.
+하지만, 상태를 업데이트하는 것은 컴포넌트를 리렌더링시킵니다. ref를 변경하는 것은 리렌더링이 일어나지 않습니다!
+
+## 예시: 스톱워치 만들기
+
+하나의 컴포넌트에서 ref와 상태를 같이 사용할 수 있습니다. 
+예시로, 사용자가 버튼을 누름으로서 시작하거나 멈출 수 있는 스톱워치를 만들어 봅시다.
+사용자가 "시작"을 누른 후 얼마나 시간이 지났는지 보여주기 위해, 언제 시작 버튼이 눌렸고 현재 시간이 언제인지를 계속해서 추적해야 합니다.
+**이 정보는 렌더링 동안 사용되므로 상태에 저장하고 있어야 합니다":
+
+```javascript
+const [startTime, setStartTime] = useState(null);
+const [now, setNow] = useState(null);
+```
+
+사용자가 "시작"을 누를 때, 10ms마다 시간이 업데이트되게 하기 위해 `setInterval`을 사용할 것입니다.
+
+<Code src="https://codesandbox.io/s/240gtb?file=%2FApp.js&utm_medium=sandpack" />
+
+"멈춤" 버튼이 눌렸을 때, `now` 상태 변수를 업데이트하는 것을 멈추기 위해 기존의 interval 함수를 취소할 필요가 있습니다.
+[`clearInterval`](https://developer.mozilla.org/en-US/docs/Web/API/clearInterval)을 통해 가능하지만, 이전에 사용자가 시작버튼을 눌렀을 때 `setInterval`을 부르면서 반환된 interval ID를 `clearInterval`에 주어야 합니다.
+어딘가에서 interval ID를 유지해야 합니다.
+**interval ID는 렌더링동안 사용되지 않기 때문에, ref에 ID를 저장할 수 있습니다**:
+
+<Code src="https://codesandbox.io/s/4w6yio?file=%2FApp.js&utm_medium=sandpack" />
+
+정보의 일부가 렌더링 동안 사용될 때는 정보를 상태에 저장하세요.
+정보의 일부가 이벤트함수에만 필요하고 변경하는 것이 리렌더링을 필요로 하지 않을 때, ref를 사용하는 것이 더 효율적입니다.
+
+## ref와 상태 사이의 차이점들
+
+아마도 ref를 상태보다 덜 "엄격한" 것으로 보고있을지도 모릅니다. 예를 들어, 상태 설정 함수를 항상 사용해야만 하는 것 대신에 ref를 변경할 수 있습니다.
+하지만 대부분의 경우에 상태를 사용하게 됩니다.
+Ref는 여러분이 종종 필요로 하지 않는 이상 현상입니다.
+아래 상태와 ref를 비교한 표입니다:
+
+|refs|state|
+|------|---|
+|`useRef(initialValue)`는 `{ current: initialValue }`를 반환합니다| `useState(initialValue)`는 상태 변수의 현재 값과 상태 설정 함수를 반환합니다 (`[value, setValue]`)
+|ref 값을 변경해도 리렌더링이 발생하지 않습니다.|상태 값을 변경하면 리렌더링이 발생합니다.
+|수정 가능 - `current`의 값을 렌더링 과정에서 벗어나서 수정하고 업데이트할 수 있습니다.|"수정 불가능" - 리렌더링 큐에 넣어 상태변수를 변경하기 위해서 상태 설정 함수를 사용해야만 합니다.
+|렌더링 동안 `crrent` 값을 읽거나 써서는 안됩니다.|어느 때든 상태를 읽을 수 있습니다. 하지만, 각 렌더는 변하지 않는 본인만의 상태 [스냅샷](https://beta.reactjs.org/learn/state-as-a-snapshot)을 가지고 있습니다.
+
+상태로 실행되는 카운터 버튼이 있습니다:
+
+<Code src="https://codesandbox.io/s/l7j2nh?file=%2FApp.js&utm_medium=sandpack" />
+
+`count` 값이 보이기 때문에 상태값을 사용하는 게 맞습니다.
+`count`가 `setCount()`로 값이 정해질 때, React는 컴포넌트를 리렌더링하고 화면은 새로운 숫자를 반영해 업데이트됩니다.
+
+ref로 실행되게 만든다면, React는 컴포넌트를 리렌더링하지 않고 숫자가 변경되는 것을 볼 수 었습니다!
+버튼을 클릭해도 **문구가 업데이트되지 않는 것**을 보세요:
+
+<Code src="https://codesandbox.io/s/q0irh4?file=%2FApp.js&utm_medium=sandpack" />
+
+렌더링 동안 `ref.current`를 읽는 것이 신뢰할 수 없는 코드를 만드는 이유입니다. 만약 렌더링 동안 읽어야 한다면, 상태를 대신 사용하세요.
+
+:::info Deep Dive
+### useRef는 내부에서 어떻게 동작할까?
+
+`useState`와 `useRef` 모두 React에 의해 제공되지만, 원칙적으로 `useRef`는 `useState`를 바탕으로 실행될 수 있습니다.
+React의 내부에서 `useRef`가 아래와 같이 동작된다고 생각해볼 수 있습니다.
+
+```javascript
+// Inside of React
+function useRef(initialValue) {
+  const [ref, unused] = useState({ current: initialValue });
+  return ref;
+}
+```
+
+첫번째 렌더링 동안, `useRef`는 `{ current: initialValue }`를 반환합니다.
+이 객체는 React에 의해 저장되면서 다음 렌더동안 같은 객체가 반환됩니다.
+이 예시에서 상태 재설정 함수가 사용되지 않는 것에 주목하세요.
+상태 재설정 함수는 불필요합니다. 그 이유는 `useRef`는 항상 같은 객체를 반환해야 되기 때문입니다.
+
+React는 `useRef`를 기본적으로 제공하는데 실제 상황에서 충분히 많이 사용되기 때문입니다.
+여러분은 ref를 상태 재설정 함수를 가지지 않는 일반적인 상태 변수로 생각할 수 있습니다.
+객체 중심 프로그래밍에 익숙하다면, ref는 `this.something` 대신에 `somethingRef.current`를 쓰는 것과 같이 instance field와 비슷합니다.
+
+:::
+
+## ref를 사용하는 경우
+
+컴포넌트가 React에서 "벗어날" 필요가 있고 외부 API(컴포넌트의 표시에 영향을 주지 않는 브라우저 API)와 소통할 때 보통 ref를 사용합니다.
+아래와 같이 몇 가지 흔하지 않은 경우들이 있습니다:
+
+- [timeout ID](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)를 저장하기
+- [다음 장](https://beta.reactjs.org/learn/manipulating-the-dom-with-refs)에서 다룰 [DOM 요소](https://developer.mozilla.org/en-US/docs/Web/API/Element)를 저장하고 조작하기
+- JSX를 조작할 필요가 없는 객체들을 저장하기
+
+만약 컴포넌트가 어떤 값을 저장하면서 렌더링 로직에 영향을 주지 않는다면, ref를 선택하세요.
+
+## ref를 사용한 좋은 예시들
+
+아래 원칙들을 따르면 컴포넌트는 더욱 예측 가능해질 것입니다:
+
+- **ref를 탈출구로 여기세요.** Ref는 외부 시스템 또는 브라우저 API를 이용해 작업할 때 유용합니다. 앱 로직과 데이터 흐름의 대부분을 ref에 의존하게 만들었다면 당신의 접근에 대해 다시 생각해 보세요.
+- **렌더링 동안 `ref.current`를 읽거나 쓰지 마세요.** 렌더링 동안 몇몇 정보가 필요하다면, [상태](https://beta.reactjs.org/learn/state-a-components-memory)를 사용하세요. 
+React는 `ref.current`가 언제 변경되는지 모르기 때문에, 렌더링동안 `ref.current`를 읽는 것은 컴포넌트의 행동을 예측하는 것을 어렵게 만들 뿐입니다.
+(이에 대한 예외로 첫번째 렌더링동안 ref를 한번만 설정하는 `if (!ref.current) ref.current = new Thing()` 같은 코드입니다.)
+
+Ref는 React 상태가 가진 한계들을 갖고 있지 않습니다.
+예를 들어, 상태는 [매 렌더링의 스냅샷](https://beta.reactjs.org/learn/state-as-a-snapshot)처럼 동작하고 [동기적으로 업데이트되지도 않습니다](https://beta.reactjs.org/learn/queueing-a-series-of-state-updates).
+하지만 ref의 현재 값을 변경할 때, 그 값은 바로 변경됩니다:
+
+```javascript
+ref.current = 5;
+console.log(ref.current); // 5
+```
+
+이는 **ref 자체가 일반적인 JavaScript 객체**이며 JavaScript 객체와 똑같이 작동하기 때문입니다.
+
+ref를 이용해 작업할 때 [변경을 피하는 것](https://beta.reactjs.org/learn/updating-objects-in-state)을 걱정할 필요가 없습니다.
+여러분이 변경하는 객체가 렌더링에 사용되지 않는 한, React는 ref 또는 ref의 내용물에 여러분이 무슨 일을 하든 관심을 갖지 않습니다.
+
+## Ref와 DOM
+
+ref에 어떠한 값이든 넣을 수 있습니다. 하지만, 가장 흔한 사용법은 DOM 요소를 넣는 것입니다.
+예를 들어, 계획적으로 input에 포커스를 두기를 원한다면 ref는 편리합니다.
+JSX의 `ref` 속성에 ref를 넘겨줄 때, `<div ref={myRef}>`와 같이, React는 `myRef.current`에 대응하는 DOM 요소를 넣을 것입니다.
+[Ref로 DOM 조작하기](https://beta.reactjs.org/learn/manipulating-the-dom-with-refs)에서 이 부분에 대해 더 알아볼 수 있습니다.
+
+## 되짚어보기
+
+- Ref는 렌더링에 사용되지 않는 값들을 저장하는 탈출구입니다. 사용되어야 하는 경우는 드뭅니다.
+- Ref는 `current`라 불리는 단일특성을 가진 순수 JavaScript 객체입니다. `current`의 값은 읽고 변경될 수 있습니다.
+- `useRef` 훅으로 ref를 React에서 받을 수 있습니다.
+- 상태와 같이, ref는 컴포넌트의 리렌더링 사이에 정보를 유지할 수 있도록 해줍니다.
+- 상태와 달리, ref의 `current` 값을 변경하는 것은 리렌더링을 유발하지 않습니다.
+- 렌더링 동안 `ref.current`를 읽거나 쓰지 마세요. 이는 컴포넌트를 더 예측하기 어렵게 만듭니다.
+
+:::note  문제에 도전해보세요
+
+## 1. 고장난 채팅 입력을 고치세요
+
+메시지를 입력하고 "보내기" 버튼을 클릭하세요. "보냈다!" 창을 보기 전에 3초의 지연이 있다는 것을 볼 수 있습니다.
+이 지연동안 "취소하기" 버튼을 볼 수 있습니다. 이 "취소하기" 버튼은 "보냈다!" 메시지가 나타나는 것을 막기 위한 용도입니다.
+`handleSend` 동안 저장한 timeout ID에 대해 [`clearTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/clearTimeout)을 부르면서 작동합니다.
+하지만, "취소하기"가 클릭된 후에도 "보냈다!" 메시지는 여전히 나타납니다. 작동하지 않는 이유를 찾아내서 고치세요.
+
+<Code src="https://codesandbox.io/s/470l0z?file=%2FApp.js&utm_medium=sandpack" />
+
+### 힌트
+
+`let timeoutID`와 같은 일반적인 변수들은 리렌더링 사이에 "살아남지" 못합니다. 매 렌더링마다 컴포넌트를 밑바닥부터 다시 실행시키면서 컴포넌트의 변수들을 초기화 시키기 때문입니다.
+timeout ID를 다른 어딘가에 저장해 두어야 하지 않을까요?
+
+### 정답
+
+컴포넌트가 리렌더링 할 때마다 모든 지역 변수들은 완전히 초기화되어집니다. 
+`timeoutID`와 같은 지역 변수 속 timeout ID를 지키지 못했던 이유이며 미래에 또다른 이벤트 핸들러가 timeout ID를 "보기"를 기대한 이유입니다. 
+대신에, React가 렌더 사이에 값을 저장해두는 ref에 timeout ID를 저장하세요.
+
+<Code src="https://codesandbox.io/s/3u5ioz?file=%2FApp.js&utm_medium=sandpack" />
+
+## 2. 컴포넌트가 리렌더링에 실패하는 것을 수정하세요
+
+이 버튼은 "켜기"와 "끄기"를 보여주는 토글입니다. 하지만, 이 버튼은 항상 "끄기"만을 보여줍니다.
+이 코드에 무슨 문제가 있나요? 고쳐보세요.
+
+<Code src="https://codesandbox.io/s/5mdcs0?file=%2FApp.js&utm_medium=sandpack" />
+
+### 정답
+
+이 예시에서, ref의 현재 값은 렌더링 결과물을 계산하는데 사용되었습니다(`{isOnRef.current ? 'On' : 'Off'}`).
+이 정보가 ref에 있어서 안된다는 신호이며 정보는 상태에 넣어져야 합니다.
+이를 고치기 위해서 ref를 제거하고 대신에 상태를 사용하세요.
+
+<Code src="https://codesandbox.io/s/crvwdb?file=%2FApp.js&utm_medium=sandpack" />
+
+## 3. 디바운싱 고치기
+
+이 예시에서, 모든 버튼 클릭 핸들러들은 ["디바운싱"](https://redd.one/blog/debounce-vs-throttle)됩니다.
+디바운싱이 무엇인지 알기 위해, 버튼 중 하나를 눌러보세요.
+1초 후 메시지가 어떻게 나타나는지 보세요.
+메시지를 기다리는 동안 버튼을 누르면, 타이머가 초기화됩니다.
+그래서 만약 여러분이 빠르게 여러번 같은 버튼을 누르면 메시지는 클릭을 멈춘 뒤 일초 *후*에 나타납니다.
+디바운싱은 여러분이 사용자가 "행동하는 것을 멈출" 때까지 행동에 대한 액션을 지연시키는 것입니다.
+
+이 예시는 동작하지만 의도된 대로 잘 동작하지는 않습니다. 버튼들은 독립적이지 않습니다.
+문제를 보면, 버튼 중 하나를 클릭하고 즉시 또다른 버튼을 클릭하세요.
+약간의 지연 후 두 버튼 모두의 메시지를 보기를 기대했을 것입니다.
+하지만 마지막 버튼의 메시지만 나타납니다. 첫번째 버튼의 메시지는 나오지 않습니다.
+
+왜 버튼이 서로 방해할까요? 찾아서 문제를 고쳐보세요.
+
+<Code src="https://codesandbox.io/s/xjm60d?file=%2FApp.js&utm_medium=sandpack" />
+
+### 힌트
+
+마지막 timeout ID는 모든 `DebouncedButton` 컴포넌트들 사이에 공유됩니다.
+이것이 버튼을 클릭하면 또다른 버튼의 timeout을 초기화시키는 이유입니다.
+각각의 버튼에 대한 timeout ID를 분리해서 저장할 수 있나요?
+
+### 정답
+
+`timeoutID`와 같은 변수가 모든 컴포넌트 사이에 공유되고 있습니다.
+이것이 두번째 버튼을 클릭하면 첫번째 버튼의 timeout을 초기화시키는 이유입니다.
+이를 고치기 위해, timeout을 ref에 저장할 수 있습니다.
+각각의 버튼은 각자의 ref를 가지고 있음으로서 그 버튼들은 서로 충돌하지 않습니다.
+두 버튼을 얼마나 빨리 클릭하든 두 메시지들은 모두 보여질 것입니다.
+
+<Code src="https://codesandbox.io/s/14lyv8?file=%2FApp.js&utm_medium=sandpack" />
+
+## 4. 최신 상태를 읽기
+
+이 예시에서 "보내기" 버튼을 누른 후 메시지가 보여지기 전 약간의 지연이 있습니다.
+"hello"를 입력하고 보내기 버튼을 누른 후 빠르게 입력을 다시 수정합니다.
+여러분의 수정에도 불구하고, 경고창은 "hello"(버튼이 클릭된 [때](https://beta.reactjs.org/learn/state-as-a-snapshot#state-over-time)의 상태값)를 보여줄 것입니다. 
+
+보통, 이 행동은 앱에서 여러분이 원하는 행위입니다.
+하지만, *가장 최신* 상태를 읽는 비동기적인 코드를 원하는 경우들이 가끔 있을지도 모릅니다.
+클릭 했을 때의 문자가 아닌 *현재* 입력 문구를 경고창에 보여주는 방법을 생각할 수 있나요?
+
+<Code src="https://codesandbox.io/s/jsmoh6?file=%2FApp.js&utm_medium=sandpack" />
+
+### 정답
+
+상태는 [스냅샷](https://beta.reactjs.org/learn/state-as-a-snapshot)과 같이 작동하므로 timeout과 같이 비동기적인 작동으로 최근 상태값을 읽을 수 없습니다.
+하지만, 가장 최신의 입력 문구를 ref에 저장할 수 있습니다.
+ref는 수정 가능하므로 언제든 `current` 속성을 읽을 수 있습니다. 
+이 예시에서 최신 문구가 렌더링동안 사용되기 때문에, 상태변수(렌더링을 위해)와 ref(timeout 동안 문구를 읽기 위해) 둘 다 필요합니다.
+여러분은 수동으로 최신 ref 값을 업데이트할 필요가 있습니다.
+
+<Code src="https://codesandbox.io/s/6gk3ld?file=%2FApp.js&utm_medium=sandpack" />
+
+:::
