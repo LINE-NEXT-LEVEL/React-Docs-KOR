@@ -1,0 +1,156 @@
+import {Code} from "../../../src/components/Code";
+
+## 컴포넌트의 body 영역에 선언되어있는 모든 변수들은 reactive 합니다. 
+
+prop과 상태만이 reactive한 값이 아닙니다. 그것을 가지고 계산한 값들 또한 reactive합니다.
+만약 prop 또는 상태가 변한다면, 컴포넌트는 리랜더링 될 것이고 prop과 상태에서 계산된 값도 변할 것입니다. ㄸㄹㄹㄷㅊㅅ에 의해 사용되는 컴포넌트 body 내부의 모든 뼌수들이 Effect 의존성 리스트에 있어야 하는 이유입니다. 
+
+사용자가 채팅 서버를 선택할 수 있다고 말해봅시다. 하지만 환경설정에서 기본 서버를 설정할수도 있습니다.
+이미 [context](https://react.dev/learn/scaling-up-with-reducer-and-context)에 설정 상태를 넣어서 context에서 `settings`를 읽을 수 있다고 가정해봅시다. 이제 props에서 가져온 선택된 서버와 기본 서버에 기반해 `serverUrl`을 계산합니다.
+
+```js
+function ChatRoom({ roomId, selectedServerUrl }) { // roomId 는 reactive 힙니다.
+  const settings = useContext(SettingsContext); // settings 는 reactive 힙니다.
+  const serverUrl = selectedServerUrl ?? settings.defaultServerUrl; // serverUrl 는 reactive 힙ㄴ;디/
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId); // Effect 에서 roomId 와 serverUrl 을 읽습니다.
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, [roomId, serverUrl]); // 둘 중 하나가 변할때마다 다시 동기화할 필요가 있습니다!
+  // ...
+}
+```
+
+이 예시에서, `serverUrl`은 prop이나 상태 변수가 아닙니다. 그것은 렌더링 동안에 계산하는 일반 변수입니다. 하지만 렌더링 동안에 계산되기 때문에, 리랜더링이 때문에 별할 수 있습니다. serverUrl이 reactive한 이유입니다. 
+
+**컴포넌트 안의 모든 값들(props, 상태, 그리고 body 안에 있는 변수들을 포함해서)은 reactive합니다. 어떤 reactive한 값도 리렌더링에 변화할 수 있기 때문에 Effect의 의존성으로 reactive한 값들을 포함시킬 필요가 있습니다.**
+
+다른 말로, Eeffect는 컴포넌트의 body에 있는 모든 값들에 "반응"합니다.
+
+:::info DEEP DIVE
+
+### 전역 값 또는 가변 값이 종속성이 될 수 있나요?
+
+가변적인 변수 값(글로벌 변수 포함)은 reactive 하지 않습니다.
+
+**[`location.pathname`](https://developer.mozilla.org/en-US/docs/Web/API/Location/pathname)과 같은 가변적인 변수 값은 종속성일 수 없습니다.** 이것은 가변적이기 때문에 React 렌더링 데이터 흐름 밖에서 언제든지 변경될 수 있습니다. 변경해도 컴포넌트가 다시 렌더링되지 않습니다. 따라서 종속성에 지정한 경우에도 그 값이 변경될 때 Effect를 다시 동기화할 수 없습니다. 렌더링 중(의존성을 계산할 때) 가변 데이터를 읽으면 [렌더링의 순수성](https://react.dev/learn/keeping-components-pure)이 깨지기 때문에 이는 React의 규칙도 위반합니다. 대신, [useSyncExternalStore](https://react.dev/learn/you-might-not-need-an-effect#subscribing-to-an-external-store)를 사용하여 외부의 가변적인 변수 값을 읽고 구독해야 합니다.
+
+**[ref.current](https://react.dev/reference/react/useRef#reference)와 같은 가변적인 변수 또는 ref.current에서 읽은 값도 종속성이 될 수 없습니다.** `useRef`에서 반환된 ref 객체 자체는 종속성일 수 있지만 `현재` 속성은 의도적으로 변경할 수 있습니다. 이 기능을 사용하면 [리랜더링을 유발하지 않고 무언가를 추적할 수 있습니다](https://react.dev/learn/referencing-values-with-refs). 그러나 변경해도 리랜더링을 일으키지 않으므로 reactive한 값이 아니며, 변경될 때 React는 Effect를 다시 실행해야하는지 알 수 없습니다.
+
+이 페이지에서 아래에서 알게 될 것처럼, linter는 이러한 문제를 자동으로 확인합니다.
+
+:::
+
+## React는 모든 reactive한 값을 종속성으로 지정했는 지 확인합니다.
+
+linter가 [React용으로 설정된](https://react.dev/learn/editor-setup#linting) 경우 Effect 코드에서 사용되는 모든 reactive한 값이 종속성으로 선언되는지 확인합니다. 예를 들어 roomId와 serverUrl이 모두 reactive 때문에 이 코드는 lint 오류입니다:
+
+<Code src="https://codesandbox.io/s/u2grt7?file=%2FApp.js&utm_medium=sandpack">
+
+이것은 React 오류처럼 보일 수 있지만 React는 코드의 버그를 지적하고 있습니다. `roomId`와 `serverUrl` 모두 시간이 지남에 따라 변경될 수 있지만, 변경될 때 Effect를 다시 동기화하는 것을 잊을 것입니다. 사용자가 UI에서 다른 값을 선택한 후에도 초기 `roomId` 및 `serverUrl`에 계속 연결되도록 남아있어야 합니다.
+
+버그를 수정하려면 linter의 제안에 따라 `roomId` 및 `serverUrl`을 Effect의 종속성으로 지정합니다:
+
+```js
+function ChatRoom({ roomId }) { // roomId is reactive
+  const [serverUrl, setServerUrl] = useState('https://localhost:1234'); // serverUrl 은 reactive 힙니다.
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, [serverUrl, roomId]); // ✅ 모든 의존성이 선언되었습니다.
+  // ...
+}
+```
+
+위의 샌드박스에서 수정해보세요. linter 오류가 사라지고 필요할 때 채팅을 다시 연결하는지 확인해보세요.
+
+:::note Note
+
+경우에 따라 React는 값이 컴포넌트 내부에서 선언되더라도 값이 변경되지 않는다는 것을 _알고 있습니다_. 예를 들어, `useState`에서 반환된 [`set` 함수](https://react.dev/reference/react/useState#setstate)와 `[useRef](https://react.dev/reference/react/useRef)`에서 반환된 ref 개체는 안정적이며, 리랜더링할 때 변경되지 않습니다. 안정된 값은 reactive하지 않으므로 배열에서 제외할 수 있습니다. 그들을 포함하는 것은 허용됩니다. 변하지 않기 때문에, 중요하지 않습니다.
+
+:::
+
+## 재동기화를 원하지 않을 때 해야 할 것
+
+이전 예제에서는 `roomId`와 `serverUrl`을 종속성으로 배열하여 lint 오류를 해결했습니다.
+
+**그러나 이러한 값이 reactove힌 값이 아니라는 것을 linter에 "증명"할 수 있습니다.** 즉, 리랜더링의 결과로 변경될 수 없다는 것을요. 예를 들어, `serverUrl`과 `roomId`가 렌더링에 의존하지 않고 항상 동일한 값을 가지는 경우 컴포넌트 외부로 이동할 수 있습니다. 이제 종속성일 필요가 없습니다:
+
+```js
+const serverUrl = 'https://localhost:1234'; // serverUrl 는 reactive 하지 않습니다
+const roomId = 'general'; // roomId 는 reactive 하지 않습니다
+
+function ChatRoom() {
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, []); // ✅ 모든 의존성이 선언되었습니다
+  // ...
+}
+```
+
+_Effect 내부로_ 이동할 수도 있습니다. 렌더링 시 계산되지 않으므로 reactive하지 않습니다:
+
+```js
+function ChatRoom() {
+  useEffect(() => {
+    const serverUrl = 'https://localhost:1234'; // serverUrl 는 reactive 하지 않습니다
+    const roomId = 'general'; // roomId 는 reactive 하지 않습니다
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, []); // ✅ 모든 의존성이 선언되었습니다
+  // ...
+}
+```
+
+**Effect는 reactive한 코드 블록입니다.** 사용자가 내부에서 읽은 값이 변경되면 다시 동기화됩니다. 상호 작용당 한 번만 실행되는 이벤트 핸들러와 달리 효과는 동기화가 필요할 때마다 실행됩니다.
+
+**종속성을 "선택"할 수 없습니다.** 종속성은 효과에서 읽은 모든 [reactive한 값](https://react.dev/learn/lifecycle-of-reactive-effects#all-variables-declared-in-the-component-body-are-reactive)을 포함해야 합니다. linter가 이를 적용합니다. 이로 인해 무한 루프와 같은 문제가 발생하고 효과가 너무 자주 다시 동기화될 수 있습니다. linter를 억제해서 이 문제를 해결해서는 안됩니다! 대신 시도해 볼 내용은 다음과 같습니다:
+
+- **Effect가 독립적인 동기화 프로세스를 나타내는지 확인합니다.** Effect가 아무것도 동기화하지 않으면 [불필요한 렌더링일 수 있습니다.](https://react.dev/learn/you-might-not-need-an-effect). 여러 개의 독립적인 것을 동기화하는 경우 [코드를 나누세요.](https://react.dev/learn/lifecycle-of-reactive-effects#each-effect-represents-a-separate-synchronization-process).
+
+- **prop이나 상태의 최신 값을 "반응"하지 않은 채 읽고 효과를 다시 동기화하려면 Effect를 reactive한 부분(Effect에서 유지)과 reactove하지 않는 부분(Effect 이벤트라고 하는 부분으로 추출)으로 나눌 수 있습니다.** [이벤트와 Effect를 구분하는 방법에 대해 읽어보십시오.](https://react.dev/learn/separating-events-from-effects)
+
+- **객체 및 함수을 종속성으로 사용하는 것을 피하세요.** 렌더링하는 동안 객체와 함수를 만든 다음 Effect에서 읽으면 렌더링마다 객체와 함수가 달라집니다. 이렇게 하면 Effect가 매번 다시 동기화됩니다. [Effects에서 불필요한 종속성을 제거하는 방법에 대해 자세히 알아보십시오.](https://react.dev/learn/removing-effect-dependencies)
+
+
+
+:::info 주의할 점
+
+linter는 당신의 친구이지만, 그 힘은 제한되어 있습니다. linter는 의존성이 잘못된 경우에만 알 수 있습니다. 그것은 각각의 사건을 해결하는 최선의 방법을 알지 못합니다. linter가 종속성을 제안하지만 이를 추가하면 루프가 발생하는 경우 linter를 무시해야 하는 것은 아닙니다. 이 값이 reactive하지 않고 종속적일 필요가 없도록 Effect 내부(또는 외부)의 코드를 변경해야 합니다.
+
+기존 코드베이스가 있는 경우 다음과 같이 linter를 억제하는 효과가 있을 수 있습니다:
+
+```js
+useEffect(() => {
+  // ...
+  // 🔴 linter를 이렇게 억누르는 것을 피하세요:
+  // eslint-ignore-next-line react-hooks/exhaustive-deps
+}, []);
+```
+
+[다음 페이지](https://react.dev/learn/removing-effect-dependencies)에서는 규칙을 위반하지 않고 이 코드를 수정하는 방법에 대해 배울 것입니다. 항상 고칠만한 가치가 있습니다!
+
+:::
+
+## 되짚어보기
+
+구성 요소는 마운트, 업데이트 및 마운트 해제할 수 있습니다.
+각 효과에는 주변 구성 요소와 별도의 수명 주기가 있습니다.
+각 효과는 시작 및 중지할 수 있는 별도의 동기화 프로세스를 설명합니다.
+효과를 쓰고 읽을 때 구성 요소의 관점(장착, 업데이트 또는 마운트 해제 방법)보다는 각 개별 효과의 관점(동기화를 시작 및 중지하는 방법)에서 생각합니다.
+구성 요소 본문 내부에 선언된 값은 "반응적"입니다.
+반응 값은 시간이 지남에 따라 변경될 수 있으므로 효과를 다시 동기화해야 합니다.
+링터는 효과 내에서 사용되는 모든 반응 값이 종속성으로 지정되었는지 확인합니다.
+링터에 의해 플래그가 지정된 모든 오류는 합법적입니다. 규칙을 어기지 않도록 코드를 수정하는 방법은 항상 있습니다.
