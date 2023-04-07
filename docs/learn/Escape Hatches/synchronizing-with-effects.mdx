@@ -113,7 +113,7 @@ function VideoPlayer({ src, isPlaying }) {
 리액트에서는 [렌더링은 JSX의 순수계산이어야만 하고](https://beta.reactjs.org/learn/keeping-components-pure)
 DOM을 변경하거나 하는 부작용을 포함해서는 안됩니다.
 
-더욱이, `VideoPlayer`가 처음으로 불릴 떄, DOM은 아직 존재하지 않습니다!
+더욱이, `VideoPlayer`가 처음으로 호출될 떄, 이 컴포넌트에 해당되는 DOM은 아직 존재하지 않습니다!
 React는 JSX가 반환될 때까지 어떤 DOM이 생성될지 모르기 떄문에 `play()`나 `pause()`를 부를 DOM 노드가 아직 없습니다.
 
 여기 해결책은 **렌더링 계산 밖으로 코드를 가져와서 `useEffect`를 사용한 부작용으로 감싸주는 것입니다.**
