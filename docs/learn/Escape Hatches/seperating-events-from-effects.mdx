@@ -1,0 +1,411 @@
+import { Code } from '../../../src/components/Code';
+
+# Effects에서 이벤트 분리하기
+
+이벤트 핸들러는 여러분이 같은 상호작용을 다시 행할때만 재실행됩니다. 이벤트 핸들러와 다르게,
+Effects는 직전 렌더링과는 다른 값을 가지는 prop이나 상태 변수같은, Effects가 읽는 어떤 값들에 재동기화합니다.
+때때로, 여러분은 이 두 동작을 섞고 싶을 것입니다: 특정 값들에만 반응하여 재랜더링되는 Effect. 이 페이지에서 여러분이
+어떻게 할 수 있는지를 알려드립니다.
+
+:::info 여러분이 배울 것
+
+- 이벤트핸들러와 Effect간에 선택하는 법
+- Effect가 왜 반응적이고 이벤트 핸들러는 그렇지 않은지에 대하여
+- Effect의 코드 일부가 반응하지 않기를 원할 때 해야할 것
+- Effect 이벤트가 무엇인지와 Effects에서 그것을 분리하는 법
+- Effect 이벤트를 사용하여 최신 props와 상태를 읽는 법
+  :::
+
+## 이벤트핸들러와 Effect간에 선택하는 법
+
+먼저, 이벤트 핸들러와 Effects의 차이점을 요약합니다.
+여러분이 채팅방 컴포넌트를 만들고 있다고 가정합니다. 여러분의 요구사항은 다음과 같습니다:
+
+1. 여러분의 컴포넌트는 자동으로 선택된 채팅방에 연결됩니다.
+2. "전송" 버튼을 누르면, 채팅에 메시지를 보내야합니다.
+
+여러분이 이미 이를 위한 코드를 만들어 두었지만, 어디에 넣어야할지 모른다고 해봅시다.
+여러분이 이벤트 핸들러나 Effects를 써야할까요? 이 질문에 답을 해야할 때마다, [_왜_ 코드가 실행되어야하는가](https://react.dev/learn/synchronizing-with-effects#what-are-effects-and-how-are-they-different-from-events)를
+고려하세요.
+
+## 특정 상호작용에 반응하여 실행되는 이벤트 핸들러
+
+유저의 관점에서, 메시지를 보내는 것은 유저가 특정 "전송" 버튼이 클릭되어야 발생됩니다.
+유저는 만약 그들의 메시지가 어떤 이유로, 어떤 다른 시간에 보내진다면 다소 짜증날 것입니다.
+이는 메시지 전송이 이벤트 핸들러여야하는 이유입니다. 이벤트 핸들러는 특정 상호작용을 처리하도록 합니다.
+
+```js
+function ChatRoom({ roomId }) {
+  const [message, setMessage] = useState('');
+  // ...
+  function handleSendClick() {
+    sendMessage(message);
+  }
+  // ...
+  return (
+    <>
+      <input value={message} onChange={(e) => setMessage(e.target.value)} />
+      <button onClick={handleSendClick}>Send</button>;
+    </>
+  );
+}
+```
+
+이벤트 핸들러로는, 여러분은 `sendMessage(message)`가 _오직_ 유저가 버튼을 클릭했을 때만 동작하도록 합니다.
+
+## Effects는 동기화가 필요할 때 항상 실행됩니다
+
+여러분이 컴포넌트와 채팅방의 연결을 유지해야함 또한 상기해보세요. 코드가 어떻게 될까요?
+
+이 코드의 실행 *이유*는 특정 상호작용을 위한 것이 아닙니다. 유저가 채팅방 화면에 왜 혹은 어떻게 향하게 되었는지는 중요하지 않습니다.
+지금 그것을 보고있고, 그것과 상호작용하며, 컴포넌트가 선택된 채팅서버와 연결되어 있어야합니다. 채팅방 컴포넌트가
+여러분의 앱의 첫 화면이었더라도, 유저가 어떤 상호작용도 행하지 않았다해도, 여러분은 _여전히_ 연결이 필요합니다.
+이는 그것이 Effect로 수행되는 이유입니다.
+
+```js
+function ChatRoom({ roomId }) {
+  // ...
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, [roomId]);
+  // ...
+}
+```
+
+이 코드로, 유저가 특정 상호작용을 수행하였는지와 _상관없이_ 항상 현재 선택된 채팅 서버에 활성화된 연결이 있음에 확신을 가질 수 있습니다.
+유저가 여러분의 앱을 열기만 했더라도, 다른 방을 선택했더라도, 다른 스크린으로 향하고 돌아왔더라도, 여러분의 Effect는 컴포넌트가 현재 선택된
+채팅방과 *동기화된 상태로 남는 것*을 보장하고, [필요할 때 재연결](https://react.dev/learn/lifecycle-of-reactive-effects#why-synchronization-may-need-to-happen-more-than-once)할 것 입니다.
+
+<Code src="https://codesandbox.io/s/nk4w67?file=/App.js&utm_medium=sandpack" />
+
+## 반응형 값들과 반응형 로직
+
+직관적으로, 여러분은 이벤트 핸들러는 항상 버튼을 클릭하는 예와 같이 "수동적으로" 트리거된다고 할 수 있습니다.
+Effects는 반대로 "자동으로": 이는 동기화 상태로 남아야할 필요가 있을 때마다 실행 및 재실행됩니다.
+
+이에 대해 생각할 수 있는 더 정확한 방법이 있습니다.
+
+여러분의 컴포넌트의 본문 내에 선언된 Props, 상태, 그리고 변수들은 `반응형 값`으로 불립니다. 예를들어
+`serverUrl`은 반응형 값이 아니지만, `roomId`와 `message`는 맞습니다. 이들은 렌더링 데이터 흐름에 관여합니다.
+
+```js
+const serverUrl = 'https://localhost:1234';
+
+function ChatRoom({ roomId }) {
+  const [message, setMessage] = useState('');
+
+  // ...
+}
+```
+
+이와 같은 반응형 값들은 리렌더링으로 변경될 수 있습니다. 예를 들어 유저가 `message`를 변경하거나 드롭다운에서 다른 `roomId`를
+선택하는 것입니다. 이벤트핸들러와 Effects는 변경들에 다르게 반응합니다.
+
+- **이벤트 핸들러 내부의 로직은 *비반응형*입니다** 그것은 유저가 같은 상호작용(클릭과 같은)을 수행하지 않는한 다시 실행되지 않습니다.
+  이벤트 핸들러는 그들의 변경에 "반응하지" 않고 반응형 값을 읽을 수 있습니다
+- **Effects 내부의 로직은 _반응형입니다._ ** 만약 여러분의 Effect가 반응형 값을 읽는다면, [종속성으로 표시](https://react.dev/learn/lifecycle-of-reactive-effects#effects-react-to-reactive-values)하세요.
+  그러면, 리렌더링이 값을 변경하면, React는 Effect의 로지긍ㄹ 새로운 값으로 재실행합니다.
+
+이 차이점을 묘사하기 위해 이전 예시를 다시 보겠습니다.
+
+## 이벤트 핸들러 내부의 로직은 비반응형
+
+이 한 줄의 코드를 보세요. 이 로직이 반응형이어야할까요?
+
+```js
+// ...
+sendMessage(message);
+// ...
+```
+
+유저의 관점에서 **`message`의 변경이 그들이 메시지를 보내기를 원한다는 의미가 _아닙니다._**
+이는 그저 유저가 타이핑중이라는 의미입니다. 다르게 말하면, 메시지를 보내는 것은 반응형이면 안됩니다.
+그 것은 `반응형 값`이 변경되었다고해서 재실행되면 안됩니다. 이 것이 이벤트 핸들러에 속하는 이유입니다.
+
+```js
+function handleSendClick() {
+  sendMessage(message);
+}
+```
+
+이벤트 핸들러는 반응형이 아니므로, `sendMessage(message)`는 유저가 전송 버튼을 클릭했을 때만 실행됩니다.
+
+## Effects 내부의 로직은 반응형
+
+아래 코드들에 돌아와보세요:
+
+```js
+// ...
+const connection = createConnection(serverUrl, roomId);
+connection.connect();
+// ...
+```
+
+유저의 관점에서, **`roomId` 변경은 유저가 다른 채팅방에 연결되기를 원한다는 의미입니다.** 다르게 말하면,
+방에 연결하는 로직은 반응형이어야합니다. 여러분은 이 코드 몇 줄로 `반응형 값`에 "동기화"하고 값이 달라지면 재실행하기를
+_원합니다_. 이것이 Effect에 속하는 이유입니다:
+
+```js
+useEffect(() => {
+  const connection = createConnection(serverUrl, roomId);
+  connection.connect();
+  return () => {
+    connection.disconnect();
+  };
+}, [roomId]);
+```
+
+Effects는 반응형이므로, `createConnection(serverUrl, roomId)`와 `connection.connect()`는 매 별개의 `roomId`값에 실행됩니다.
+여러분의 Effect는 채팅 연결이 현재 선택된 방으로 동기화되도록 유지합니다.
+
+## 비반응형 로직을 Effect에서 분리하기
+
+여러분이 반응형 로직과 비반응형 로직을 섞기를 원한다면 일이 더 복잡해집니다.
+
+예를들어, 여러분이 유저가 채팅에 연결되었을때 알림을 보여주고싶다고 가정합시다. 여러분이 props에서 현재 테마(다크 혹은 라이트)를 읽어
+알맞은 컬러로 알림을 보여줄 수 있습니다.
+
+```js
+function ChatRoom({ roomId, theme }) {
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.on('connected', () => {
+      showNotification('Connected!', theme);
+    });
+    connection.connect();
+    // ...
+```
+
+이에 반해 `theme`는 반응형 값(리렌더링의 결과로 변경될 수 있음)이고, [모든 Effect에 의해 읽히는 반응형 값은
+의존성에 선언되어야합니다.](https://react.dev/learn/lifecycle-of-reactive-effects#react-verifies-that-you-specified-every-reactive-value-as-a-dependency)
+이제 여러분은 Effect에 `theme`를 특정해야합니다.
+
+```js
+function ChatRoom({ roomId, theme }) {
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.on('connected', () => {
+      showNotification('Connected!', theme);
+    });
+    connection.connect();
+    return () => {
+      connection.disconnect()
+    };
+  }, [roomId, theme]); // ✅ All dependencies declared
+  // ...
+```
+
+이 예제를 확인하고, 유저 경험에 문제를 발견할 수 있는지 확인해보세요.
+
+<Code src="https://codesandbox.io/s/vxw9h1?file=%2FApp.js&utm_medium=sandpack" />
+
+`roomId`가 변경될 때, 채팅은 여러분이 예상한대로 재연결됩니다. 하지만 `theme` 또한 의존성이 있는 값이기 때문에,
+채팅은 _또한_ 매 번 다크, 라이트로 테마를 변경할 때마다 재연결됩니다.
+
+다르게 말하면, 아래 줄이 Effect(반응형인)안에 있어도 반응형이길 원하지 _않는다면_:
+
+```js
+// ...
+showNotification('Connected!', theme);
+// ...
+```
+
+이 비반응형 로직을 반응형 Effect에서 분리해야합니다.
+
+## Effect 이벤트 선언하기
+
+:::danger Under Construction
+이 섹션은 안정 React 버전에서 **릴리즈되지 않은 실험적인 API**를 설명합니다.
+:::
+
+[`useEffectEvent`](https://react.dev/reference/react/experimental_useEffectEvent)라 볼리는 특별한 훅을 사용하여 여러분의 Effect에서
+비반응형 로직을 추출해보세요.
+
+```js
+import { useEffect, useEffectEvent } from 'react';
+
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(() => {
+    showNotification('Connected!', theme);
+  });
+  // ...
+```
+
+여기 `onConnected`는 *Effect 이벤트*라고 불립니다. 여러분의 Effect 로직의 일부이지만, 이벤트핸들러에 가깝게 동작합니다.
+내부 로직은 비반응형이고, 항상 최신의 props와 상태값을 "관찰"합니다.
+
+이제 여러분은 Effect 내부에서 _onConnected_ Effect 이벤트를 호출할 수 있습니다.
+
+```js
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(() => {
+    showNotification('Connected!', theme);
+  });
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.on('connected', () => {
+      onConnected();
+    });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]); // ✅ All dependencies declared
+  // ...
+```
+
+이것이 문제를 해결합니다. 여러분이 `onConnected`를 Effect 종속성 리스트에서 *제거*함을 확인하세요.
+**Effect 이벤트들은 비반응형이고 종속성에서 생략되어야합니다.**
+
+새 동작이 여러분이 예상한대로인지 확인해보세요.
+
+<Code src="https://codesandbox.io/s/bd0s8d?file=%2FApp.js&utm_medium=sandpack" />
+
+Effect 이벤트들이 이벤트 핸들러와 아주 유사하다고 생각할 수 있습니다. 주된 차이점은 이벤트 핸들러는 유저 상호작용에
+반응하여 실행되는 것임에 반해, Effect 이벤트는 Effects에서 여러분에 의해 실행된다는 것입니다.
+Effect 이벤트는 여러분이 Effects의 반응성과 반응형이면 안되는 코드같의 "체인을 부수도록" 해줍니다.
+
+## Effect 이벤트로 최신의 props와 상태를 읽기
+
+:::danger Under Construction
+이 섹션은 안정 React 버전에서 **릴리즈되지 않은 실험적인 API**를 설명합니다.
+:::
+
+Effect 이벤트는 여러분이 종속성 linter를 억제하려고 유혹 당할 수 있는 많은 패턴들을 수정할 수 있도록 합니다.
+
+예를들어 Effect가 페이지 방문들을 기록한다고 해봅시다:
+
+```js
+function Page() {
+  useEffect(() => {
+    logVisit();
+  }, []);
+  // ...
+}
+```
+
+후에, 여러분의 사이트에 여러 라우트를 추가하게 되었습니다. 이제 여러분의 `Page` 컴포넌트는 `url` prop에 현재 경로를 받습니다.
+여러분은 `url`을 `logVisit`호출의 부분으로 넘기고 싶지만, 종속성 linter가 불만을 표시합니다:
+
+```js
+function Page({ url }) {
+  useEffect(() => {
+    logVisit(url);
+  }, []); // 🔴 React Hook useEffect has a missing dependency: 'url'
+  // ...
+}
+```
+
+여러분이 코드가 어떻게 동작했으면 하는지 생각해보세요. 여러분은 다른 페이지를 의미하는 다른 URL들로 방문을 구분하여 기록하고 _싶습니다_.
+다르게 말하면, `logVisit` 호출은 _반드시_ `url`에 반응하여야합니다. 이 경우에, 종속성 linter를 따르는 것과 `url`을 종속성에 추가하는 것이 합당한 이유입니다.
+
+```js
+function Page({ url }) {
+  useEffect(() => {
+    logVisit(url);
+  }, [url]); // ✅ All dependencies declared
+  // ...
+}
+```
+
+이제 여러분이 모든 페이지 방문에서 쇼핑카트에 담은 물품들을 포함하고 싶다고 해봅시다:
+
+```js
+function Page({ url }) {
+  const { items } = useContext(ShoppingCartContext);
+  const numberOfItems = items.length;
+
+  useEffect(() => {
+    logVisit(url, numberOfItems);
+  }, [url]); // 🔴 React Hook useEffect has a missing dependency: 'numberOfItems'
+  // ...
+}
+```
+
+여러분은 `numberOfItems`를 Effect 내부에 사용하였으므로 linter는 종속성에 추가하라고 요구합니다.
+하지만, 여러분은 `logVisit`를 `numberOfItems`에 반응하여 호출되기를 원하지 않습니다.
+만양 유저가 쇼핑카트에 무언가를 추가하여 `numberOfItems`가 변경되면, 이는 유저가 그 페이지를 재방문 했다는 *의미가 아닙니다.
+다르게 말하면, *페이지를 방문하는 것\_은 "이벤트"에 가깝습니다. 정확한 시간에 발생하게 됩니다.
+
+코드를 두 파트로 분리합니다:
+
+```js
+function Page({ url }) {
+  const { items } = useContext(ShoppingCartContext);
+  const numberOfItems = items.length;
+
+  const onVisit = useEffectEvent((visitedUrl) => {
+    logVisit(visitedUrl, numberOfItems);
+  });
+
+  useEffect(() => {
+    onVisit(url);
+  }, [url]); // ✅ All dependencies declared
+  // ...
+}
+```
+
+여기서 `onVisit`는 Effect 이벤트입니다. 내부의 코드는 반응형이 아닙니다. 이것이 `numberOfItems`(또는 다른 반응형 값)를
+주위를 둘러싼 코드가 변경에 재실행될 걱정없이 사용할 수 있는 이유입니다.
+
+반면에, Effect는 그 자체가 반응형으로 납습니다. Effect 내부 코드는 `url` prop을 사용하고, Effect는 매번 다른 `url`으로
+리렌더링되면 재실행됩니다. 결과로, `onVisit` Effect 이벤트를 호출하게 도비니다.
+
+결과적으로, 여러분은 `logVisit`를 `url`변경마다 부르고, 최신의 `numberOfItems`를 읽게됩니다.
+하지만 만약 `numberOfItems`가 변경된다면 코드의 재실행이 발생하지 않습니다.
+
+:::note Note
+
+`onVisit()`를 인자들 없이 호출하고 내부에서 `url`을 읽을 수 있는지 궁금할 것 입니다.
+
+```js
+const onVisit = useEffectEvent(() => {
+  logVisit(url, numberOfItems);
+});
+
+useEffect(() => {
+  onVisit();
+}, [url]);
+```
+
+이는 동작하지만, Effect 이벤트에 정확히 `url`을 전달하는 것이 낫습니다.
+**`url`을 Effect 이벤트의 인자로 전달하여서, 여러분은 다른 `url`로 페이지를 방문하는 것이,
+유저 관점에서 별도의 "이벤트"를 구성한다는 의미입니다.**
+`visitedUrl`은 발생한 "이벤트"의 *부분*입니다.
+
+```js
+const onVisit = useEffectEvent((visitedUrl) => {
+  logVisit(visitedUrl, numberOfItems);
+});
+
+useEffect(() => {
+  onVisit(url);
+}, [url]);
+```
+
+여러분의 Effect 이벤트가 정확히 `visitedUrl`에 대해 "묻기"때문에, 이제 Effect의 의존성들에서
+`url`을 임의로 제거할 수 없습니다. 만약 `url`을 종속성에서 제거한다면(별도의 페이지 방문이 하나로 측정될 것),
+linter는 여러분에게 그것을 경고할 것입니다. `url`에 따라 `onVisit`가 반응하길 원한다면,
+내부에서 `url`을 읽는 것 대신에 Effect에서 넘겨주면됩니다.
+
+Effect 내부에 비동기적인 로직이 있다면 이 내용이 중요해집니다.
+
+```js
+const onVisit = useEffectEvent((visitedUrl) => {
+  logVisit(visitedUrl, numberOfItems);
+});
+
+useEffect(() => {
+  setTimeout(() => {
+    onVisit(url);
+  }, 5000); // Delay logging visits
+}, [url]);
+```
+
+여기서, `onVisit` 내부의 `url`은 _최신의_ `url`(이미 변경된)과 일치하지만, `visitedUrl`은 이 Effect를
+발생시킨(그리고 이 `onVisit`를 호출한) 원래의 `url`과 일치합니다.
+
+:::
