@@ -28,7 +28,7 @@ function App() {
   useEffect(() => {
     if (!didInit) {
       didInit = true;
-      // ✅ 앱 로드 동안 단 한범난 실행합니다.
+      // ✅ 앱 로드 동안 단 한번만 실행합니다.
       loadDataFromLocalStorage();
       checkAuthToken();
     }
