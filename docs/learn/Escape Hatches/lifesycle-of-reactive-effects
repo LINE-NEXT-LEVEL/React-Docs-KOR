@@ -11,7 +11,7 @@ prop과 상태만이 reactive한 값이 아닙니다. 그것을 가지고 계산
 ```js
 function ChatRoom({ roomId, selectedServerUrl }) { // roomId 는 reactive 힙니다.
   const settings = useContext(SettingsContext); // settings 는 reactive 힙니다.
-  const serverUrl = selectedServerUrl ?? settings.defaultServerUrl; // serverUrl 는 reactive 힙ㄴ;디/
+  const serverUrl = selectedServerUrl ?? settings.defaultServerUrl; // serverUrl 는 reactive 합니다
   useEffect(() => {
     const connection = createConnection(serverUrl, roomId); // Effect 에서 roomId 와 serverUrl 을 읽습니다.
     connection.connect();
