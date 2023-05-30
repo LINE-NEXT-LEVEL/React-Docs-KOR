@@ -571,4 +571,128 @@ Effect는 지속 시간의 최신 값을 읽어야 하지만 `duration`의 변�
 이 문제를 해결하는 방법은 여러 가지가 있지만 궁극적으로는 객체를 종속성으로 지정하는 것을 피해야 합니다.
 
 ### 정답
+Effect는 `options` 객체에 따라 달라지기 때문에 다시 실행되고 있습니다. 객체는 의도하지 않게 다시 생성될 수 있으므로 가능한 한 Effect의 종속성으로 간주되지 않도록 해야 합니다.
+가장 소극적인 해결책은 Effect 바로 밖에서 `roomId`와 `serverUrl`을 읽은 다음 의도하지 않게 변경할 수 없는 기본 값에 따라 Effect를 결정하는 것입니다. 
+Effect에서 객체를 만들면 객체가 `createConnection`으로 전달됩니다:
 
+<Code src="https://codesandbox.io/s/kc7ede?file=/ChatRoom.js&utm_medium=sandpack"/>
+
+객체 `options` prop을 보다 구체적인 `roomId`와 `serverUrl` prop으로 바꾸는 것이 훨씬 더 좋습니다:
+
+<Code src="https://codesandbox.io/s/z6nidp?file=%2FChatRoom.js&utm_medium=sandpack"/>
+
+가능한 경우 원시적인 prop을 고수하면 나중에 컴포넌트를 더 쉽게 최적화할 수 있습니다.
+
+### 도전4. 채팅 재연결 다시 수정하기
+
+이 예제는 암호화 여부와 상관없이 대화에 연결됩니다. 이 확인란을 선택 취소하고 암호화를 설정하거나 해제할 때 콘솔의 다양한 메시지를 확인합니다. 
+방을 바꿔 보세요. 그런 다음 테마를 전환해 보세요. 대화방에 연결되면 몇 초마다 새 메시지를 받게 됩니다. 선택한 테마와 색상이 일치하는지 확인합니다.
+
+이 예에서는 테마를 변경할 때마다 채팅이 다시 연결됩니다. 이거 고쳐주세요. 수정 후 테마를 변경하면 대화가 다시 연결되지 않지만 암호화 설정을 전환하거나 대화방을 변경하면 다시 연결됩니다.
+
+`chat.js`에서 코드를 변경하지 마세요. 그 외에는 코드가 동일한 동작을 수행하는 한 모든 코드를 변경할 수 있습니다. 
+예를 들어, 전해지는 prop을 변경하는 것이 도움이 될 수 있습니다.
+
+<Code src="https://codesandbox.io/s/ktlzkl?file=%2FChatRoom.js&utm_medium=sandpack"/>
+
+### 힌트
+
+두 가지 함수, 즉 `onMessage` 및 `createConnection`를 전달하는 것입니다. 둘 다 `App` 재렌더링 시마다 처음부터 생성됩니다. 
+이러한 값은 매번 새로운 값으로 간주되므로 Effect를 다시 유발합니다.
+
+이러한 함수 중 하나는 이벤트 처리기입니다. 이벤트 핸들러 함수의 새 값에 "반응"하지 않고 이벤트 핸들러를 Effect라고 부르는 방법을 알고 계시나요? 그것은 도움이 될 것입니다!
+
+이러한 함수 중 다른 함수는 가져온 API 메서드에 일부 상태를 전달하는 경우에만 존재합니다. 
+이 기능이 정말 필요합니까? 전해져야하는 필수 정보는 무엇인가요? 일부 import를 `App.js`에서 `ChatRoom.js`로 이동해야 할 수 있습니다.
+
+### 정답
+
+이 문제를 해결하는 올바른 방법은 여러 가지가 있지만 여기 가능한 해결책이 하나 있습니다.
+
+원래 예제에서 테마를 전환하면 다른 `onMessage` 및 `createConnection` 함수가 생성되어 전달되도록 합니다. 
+Effect는 이러한 함수에 따라 달라지므로 테마를 전환할 때마다 채팅이 다시 연결됩니다.
+
+`onMessage`로 문제를 해결하려면 이 문제를 Effect Event로 감쌀 필요가 있습니다:
+
+```js 
+export default function ChatRoom({ roomId, createConnection, onMessage }) {
+  const onReceiveMessage = useEffectEvent(onMessage);
+
+  useEffect(() => {
+    const connection = createConnection();
+    connection.on('message', (msg) => onReceiveMessage(msg));
+    // ...
+```
+
+`onMessage` prop과 달리 `onReceiveMessage` Effect 이벤트는 반응하지 않습니다. 
+따라서 Effect의 종속성일 필요가 없습니다. 따라서 `onMessage`로 변경해도 채팅이 다시 연결되지 않습니다.
+
+`createConnection`은 반응형이어야 _하므로_ 동일한 작업을 수행할 수 없습니다. 
+사용자가 암호화된 연결과 암호화되지 않은 연결을 전환하거나 현재 채팅방을 전환할 경우 Effect를 다시 트리거하길 _원할 수_ 있습니다. 
+그러나 `createConnection`은 함수이므로 읽기 정보가 _실제로_ 변경되었는지 여부를 확인할 수 없습니다. 
+이 문제를 해결하려면 `App` 컴포넌트에서 `createConnection`을 전달하는 대신 날것의 `roomId` 및 `isEncrypted` 값을 전달합니다:
+
+```js 
+   <ChatRoom
+        roomId={roomId}
+        isEncrypted={isEncrypted}
+        onMessage={msg => {
+          showNotification('New message: ' + msg, isDark ? 'dark' : 'light');
+        }}
+      />
+```
+
+이제 `App`에서 `createConnection` 함수를 전달하는 대신 Effect 내부로 함수를 이동할 수 있습니다:
+
+```js 
+import {
+  createEncryptedConnection,
+  createUnencryptedConnection,
+} from './chat.js';
+
+export default function ChatRoom({ roomId, isEncrypted, onMessage }) {
+  const onReceiveMessage = useEffectEvent(onMessage);
+
+  useEffect(() => {
+    function createConnection() {
+      const options = {
+        serverUrl: 'https://localhost:1234',
+        roomId: roomId
+      };
+      if (isEncrypted) {
+        return createEncryptedConnection(options);
+      } else {
+        return createUnencryptedConnection(options);
+      }
+    }
+    // ...
+```
+
+이 두 가지 변경 후에는 더 이상 다음 함수 값에 따라 Effect가 달라지지 않습니다:
+
+```js 
+export default function ChatRoom({ roomId, isEncrypted, onMessage }) { // Reactive values
+  const onReceiveMessage = useEffectEvent(onMessage); // Not reactive
+
+  useEffect(() => {
+    function createConnection() {
+      const options = {
+        serverUrl: 'https://localhost:1234',
+        roomId: roomId // Reading a reactive value
+      };
+      if (isEncrypted) { // Reading a reactive value
+        return createEncryptedConnection(options);
+      } else {
+        return createUnencryptedConnection(options);
+      }
+    }
+
+    const connection = createConnection();
+    connection.on('message', (msg) => onReceiveMessage(msg));
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, isEncrypted]); // ✅ 모든 종속성이 선언됨
+```
+따라서 대화는 의미 있는 항목(`roomId` 또는 `isEncrypted`)가 변경될 때만 다시 연결됩니다:
+
+<Code src="https://codesandbox.io/s/oorctr?file=%2FChatRoom.js&utm_medium=sandpack"/>
