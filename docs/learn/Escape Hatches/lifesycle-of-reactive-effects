@@ -193,7 +193,7 @@ useEffect(() => {
 
 <Code src="https://codesandbox.io/s/18j4mw?file=%2FApp.js&utm_medium=sandpack">
 
-대안으로는 `if(canMove) {... }` 조건을 _이벤트 구독_ 로직으로 감쌀 수 있습니다:
+대안으로는 `if(canMove) {... }` 조건을 *이벤트 구독* 로직으로 감쌀 수 있습니다:
 
 <Code src="https://codesandbox.io/s/4bevbk?file=%2FApp.js&utm_medium=sandpack">
 
