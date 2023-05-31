@@ -114,7 +114,7 @@ function ChatRoom() {
 }
 ```
 
-**Effect는 reactive한 코드 블록입니다.** 사용자가 내부에서 읽은 값이 변경되면 다시 동기화됩니다. 상호 작용당 한 번만 실행되는 이벤트 핸들러와 달리 효과는 동기화가 필요할 때마다 실행됩니다.
+**Effect는 reactive한 코드 블록입니다.** Effect 내부에 여러분이 읽은 값들이 변경되면 Effect는 다시 동기화됩니다. 상호 작용당 한 번만 실행되는 이벤트 핸들러와 달리 효과는 동기화가 필요할 때마다 실행됩니다.
 
 **종속성을 "선택"할 수 없습니다.** 종속성은 효과에서 읽은 모든 [reactive한 값](https://react.dev/learn/lifecycle-of-reactive-effects#all-variables-declared-in-the-component-body-are-reactive)을 포함해야 합니다. linter가 이를 적용합니다. 이로 인해 무한 루프와 같은 문제가 발생하고 효과가 너무 자주 다시 동기화될 수 있습니다. linter를 억제해서 이 문제를 해결해서는 안됩니다! 대신 시도해 볼 내용은 다음과 같습니다:
 
@@ -229,6 +229,11 @@ Effect 종속성을 [`handleMove`]로 변경할 수 있지만 모든 렌더에 �
 
 <Code src="https://codesandbox.io/s/kw7vqn?file=%2FApp.js&utm_medium=sandpack">
 
+Effect 본문 안에 console.log('Resubscribing')를 추가하면 체크박스를 변경하거나(`canMode`가 변경됩니다) 코드를 편집할 때만 다시 구독합니다. 
+이를 통해 항상 다시 구독하는 이전 접근 방식보다 효율적이게 되었습니다.
+
+이러한 유형의 문제에 대한 보다 일반적인 접근 방식은 [Effect에서 이벤트 분리하기](https://react.dev/learn/separating-events-from-effects)에서 배우게 됩니다.
+
 ### 4. 스위치 연결 고치기
 
 이 예에서 `chat.js`의 채팅 서비스는 두 가지 다른 API를 제공합니다:`createEncryptedConnection` 와 `createUnencryptedConnection`입니다. 루트 `App` 컴포넌트는 사용자가 암호화 사용 여부를 선택할 수 있도록 한 다음 해당 API 메서드를 하위 `ChatRoom` 컴포넌트에 `createConnection` prop으로 전달합니다.
@@ -273,6 +278,7 @@ linter 억제를 제거하면 linter 오류가 나타납니다. 문제는 `creat
 
 - 첫 번째 셀렉트 박스는 원격 행성 목록에 동기화됩니다.
 - 두 번째 셀렉트 박스는 현재 `planetId`에 대한 원격 위치 목록에 동기화됩니다.
+
 이것이 두 개의 개별 Effect로 설명하는 것이 타당한 이유입니다. 다음은 이러한 작업을 수행하는 방법의 예입니다:
 
 <Code src="https://codesandbox.io/s/g3oym4?file=%2FApp.js&utm_medium=sandpack"/>
