@@ -222,7 +222,7 @@ function Chat({ roomId, notificationCount }) {
 
 
 때로는 Effect가 특정 값에 "반응"하기를 원하지만, 해당 값은 원하는 것보다 더 자주 변경되며 사용자의 관점에서 실제 변경 내용을 반영하지 못할 수도 있습니다. 
-예를 들어 컴포넌트의 본문에 `options` 객체를 만든 다음 Effect의 내부에서 해당 객체를 읽었다고 가정합니다:
+예를 들어 컴포넌트의 내부에서 `options` 객체를 만든 다음 Effect의 내부에서 해당 객체를 읽었다고 가정합니다.
 
 ```js 
 function ChatRoom({ roomId }) {
