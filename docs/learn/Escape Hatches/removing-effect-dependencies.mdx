@@ -199,7 +199,7 @@ Effect 이벤트는 reactive하지 않으므로 종속성으로 지정할 필요
 
 이 예제에서는 `roomId`가 변경될 때마다 방문을 기록하려고 합니다. 로그 이벤트를 트리거하기 위해 `notificationCount`를 변경하지 않고 모든 로그에 현재 `notificationCount`를 포함하려고 합니다.
 
-해결책은 다시 reactive하지 않은 코드를 Effect 이벤트로 분할하는 것입니다:
+해결책은 다시 reactive하지 않은 코드를 Effect 이벤트로 분할하는 것입니다.
 
 ```js 
 function Chat({ roomId, notificationCount }) {
