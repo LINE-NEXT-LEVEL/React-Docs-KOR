@@ -55,7 +55,7 @@ function Form() {
   const [firstName, setFirstName] = useState('Taylor');
   const [lastName, setLastName] = useState('Swift');
 
-  // 🔴 Avoid: redundant state and unnecessary Effect
+  // 🔴 Avoid: 더 이상 사용하지 않는 상태와 불필요한 Effect
   const [fullName, setFullName] = useState('');
   useEffect(() => {
     setFullName(firstName + ' ' + lastName);
@@ -72,7 +72,7 @@ function Form() {
 function Form() {
   const [firstName, setFirstName] = useState('Taylor');
   const [lastName, setLastName] = useState('Swift');
-  // ✅ Good: calculated during rendering
+  // ✅ Good: 렌더링동안 계산 됨
   const fullName = firstName + ' ' + lastName;
   // ...
 }
@@ -92,7 +92,7 @@ function Form() {
 function TodoList({ todos, filter }) {
   const [newTodo, setNewTodo] = useState('');
 
-  // 🔴 Avoid: redundant state and unnecessary Effect
+  // 🔴 Avoid: 더 이상 사용하지 않는 상태와 불필요한 Effect
   const [visibleTodos, setVisibleTodos] = useState([]);
   useEffect(() => {
     setVisibleTodos(getFilteredTodos(todos, filter));
@@ -107,7 +107,7 @@ function TodoList({ todos, filter }) {
 ```javascript
 function TodoList({ todos, filter }) {
   const [newTodo, setNewTodo] = useState('');
-  // ✅ This is fine if getFilteredTodos() is not slow.
+  // ✅ getFilteredTodos()가 느리지 않으면 괜찮습니다.
   const visibleTodos = getFilteredTodos(todos, filter);
   // ...
 }
@@ -124,7 +124,7 @@ import { useMemo, useState } from 'react';
 function TodoList({ todos, filter }) {
   const [newTodo, setNewTodo] = useState('');
   const visibleTodos = useMemo(() => {
-    // ✅ Does not re-run unless todos or filter change
+    // ✅ todos 나 filter가 변경되지 않으면 재실행되지 않습니다.
     return getFilteredTodos(todos, filter);
   }, [todos, filter]);
   // ...
@@ -138,7 +138,7 @@ import { useMemo, useState } from 'react';
 
 function TodoList({ todos, filter }) {
   const [newTodo, setNewTodo] = useState('');
-  // ✅ Does not re-run getFilteredTodos() unless todos or filter change
+  // ✅  todos 나 filter가 변경되지 않으면 getFilteredTodos()를 재실행하지 않습니다.
   const visibleTodos = useMemo(() => getFilteredTodos(todos, filter), [todos, filter]);
   // ...
 }
@@ -196,7 +196,7 @@ console.timeEnd('filter array');
 export default function ProfilePage({ userId }) {
   const [comment, setComment] = useState('');
 
-  // 🔴 Avoid: Resetting state on prop change in an Effect
+  // 🔴 Avoid: Effect에서 prop 변경시에 상태를 초기화 하는 것
   useEffect(() => {
     setComment('');
   }, [userId]);
@@ -217,7 +217,7 @@ export default function ProfilePage({ userId }) {
 }
 
 function Profile({ userId }) {
-  // ✅ This and any other state below will reset on key change automatically
+  // ✅ 이 상태와 아래의 상태들은 key 변경시 자동으로 리셋됩니다.
   const [comment, setComment] = useState('');
   // ...
 }
@@ -244,7 +244,7 @@ function List({ items }) {
   const [isReverse, setIsReverse] = useState(false);
   const [selection, setSelection] = useState(null);
 
-  // 🔴 Avoid: Adjusting state on prop change in an Effect
+  // 🔴 Avoid: Effect에서 prop 변경시에 상태를 지정하는 것
   useEffect(() => {
     setSelection(null);
   }, [items]);
@@ -294,7 +294,7 @@ DOM을 업데이트하지 않았고, 이와 같이 `List`의 자식이 기존 `s
 function List({ items }) {
   const [isReverse, setIsReverse] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-  // ✅ Best: Calculate everything during rendering
+  // ✅ Best: 렌더링동안 모든 것을 계산하는 것
   const selection = items.find((item) => item.id === selectedId) ?? null;
   // ...
 }
