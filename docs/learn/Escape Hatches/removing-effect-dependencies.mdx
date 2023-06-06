@@ -17,7 +17,7 @@ function ChatRoom({ roomId }) {
 ```
 
 `messages` 변수를 사용하여 기존의 모든 메시지로 시작하는 [새 배열을 만들고](https://react.dev/learn/updating-arrays-in-state) 마지막에 새 메시지를 추가합니다.
-그러나 `messages`는 효과에서 읽은 reactive한 값이므로 종속성이어야 합니다:
+그러나 `messages`는 Effect에서 읽은 reactive한 값이므로 종속성이어야 합니다.
 
 ```js
 function ChatRoom({ roomId }) {
