@@ -628,7 +628,7 @@ export default function ChatRoom({ roomId, createConnection, onMessage }) {
 
 `createConnection`은 반응형이어야 _하므로_ 동일한 작업을 수행할 수 없습니다. 
 사용자가 암호화된 연결과 암호화되지 않은 연결을 전환하거나 현재 채팅방을 전환할 경우 Effect를 다시 트리거하길 _원할 수_ 있습니다. 
-그러나 `createConnection`은 함수이므로 읽기 정보가 _실제로_ 변경되었는지 여부를 확인할 수 없습니다. 
+그러나 `createConnection`은 함수이므로 이 함수가 읽은 정보가 _실제로_ 변경되었는지 여부를 확인할 수 없습니다. 
 이 문제를 해결하려면 `App` 컴포넌트에서 `createConnection`을 전달하는 대신 날것의 `roomId` 및 `isEncrypted` 값을 전달합니다:
 
 ```js 
