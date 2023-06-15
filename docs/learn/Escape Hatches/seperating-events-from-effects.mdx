@@ -150,7 +150,7 @@ Effect 이벤트는 리액티브 하지 않은 effect 코드의 "조각"입니�
 **정답**
 평소처럼 여러분은 effect 안에서 버그를 찾기 시작할겁니다. linter 억제가 잘못되진 않았는지부터 확인해보세요.
 
-만약 lint를 억제하는 주석을 제거하면, React는 여러분에게 이 effect 코드의 의존성이 `increment`에 있지만 여러분이 React에게 이 코드가 어떤 리액티브한 변수에도 의존하지 않고 있다고 거짓말 하고 있음을 알려줄 것입니다.
+만약 lint를 억제하는 주석을 제거하면, React는 여러분에게 이 effect 코드의 의존성이 `increment`에 있지만 여러분이 React에게 이 코드가 어떤 리액티브한 변수에도 의존하지 않고 있다고(`[]`) 거짓말 하고 있음을 알려줄 것입니다.
 `increment` 변수를 의존성 배열에 추가해주세요.
 
 <Code src="https://codesandbox.io/embed/infallible-benz-0bx5sq?fontsize=14&hidenavigation=1&theme=dark" />
