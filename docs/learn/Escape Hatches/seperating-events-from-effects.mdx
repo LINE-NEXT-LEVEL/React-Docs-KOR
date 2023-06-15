@@ -204,7 +204,7 @@ function ChatRoom({ roomId, theme }) {
 <Code src="https://codesandbox.io/s/vxw9h1?file=%2FApp.js&utm_medium=sandpack" />
 
 `roomId`가 변경될 때, 채팅은 여러분이 예상한대로 재연결됩니다. 하지만 `theme` 또한 의존성이 있는 값이기 때문에,
-채팅은 _또한_ 매 번 다크, 라이트로 테마를 변경할 때마다 재연결됩니다.
+채팅 _또한_ 매 번 다크, 라이트로 테마를 변경할 때마다 재연결됩니다.
 
 다르게 말하면, 아래 줄이 Effect(반응형인)안에 있어도 반응형이길 원하지 _않는다면_:
 
