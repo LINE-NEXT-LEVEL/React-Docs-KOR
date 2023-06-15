@@ -170,7 +170,7 @@ function ShippingForm({ country }) {
 
 브라우저의 [`requestAnimationFrame`](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) API를 이용해
 fade-in 애니메이션을 *처음부터* 만든다고 가정해봅시다.
-아마 애니메이션 루프를 설정하는 effect부터 만들 것입니다. 각 애니메이션의 프레임에서는 [ref에 할당된] DOM 노드의 opacity를 `1`까지 변경할 것입니다.
+아마 애니메이션 루프를 설정하는 effect부터 만들 것입니다. 각 애니메이션의 프레임에서는 [ref에 할당된](https://react.dev/learn/manipulating-the-dom-with-refs) DOM 노드의 opacity를 `1`까지 변경할 것입니다.
 코드는 이렇게 시작하겠죠.
 
 <Code src="https://codesandbox.io/embed/optimistic-ives-nlqetb?fontsize=14&hidenavigation=1&theme=dark" />
