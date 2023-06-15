@@ -41,7 +41,7 @@ Lint를 껐을 때 생기는 또 다른 혼란스러운 버그도 있습니다. 
 이 코드를 작성한 사람은 React에게 effect는 어떤 반응형 변수에도 의존하지 않는다고 "거짓말"을 했습니다.
 이로 인해 React는 `canMove` 함수(그리고 `handleMove` 함수)가 변경된 후에도 다시 싱크를 맞추지 않았던 것입니다.
 React가 effect와 다시 싱크를 맞추지 않는다면, 리스너에 부착된 `handleMove` 함수는 최초에 렌더링되었을 때 생성된 `handleMove`일 것입니다.
-그리고 이 `handleMove` 함수는 `canMove`가 `true`인 상태일때 만들어진 함수이므로, 영원히 `canMove`가 `true`인 채로 기억하고 있을 것입니다.
+그리고 이 `handleMove` 함수는 첫 렌더링시에 `canMove`가 `true`인 상태일때 만들어진 함수이므로, 영원히 `canMove`가 `true`인 채로 기억하고 있을 것입니다.
 
 **lint를 무시하지 않는다면, 여러분은 상한(stale) 변수로 인해 발생하는 문제점들을 볼 일이 없을 것입니다.**
 
