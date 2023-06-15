@@ -133,12 +133,12 @@ React 어플리케이션은 컴포넌트로 이루어져있습니다.
 예를들어 아래의 `useSorted`는 Hooks를 호출하지 않으므로, 대신 `getSorted`라고 명명하세요:
 
 ```js
-// 🔴 Avoid: A Hook that doesn't use Hooks
+// 🔴 Avoid: Hooks를 사용하지 않는 Hook
 function useSorted(items) {
   return items.slice().sort();
 }
 
-// ✅ Good: A regular function that doesn't use Hooks
+// ✅ Good: Hooks를 사용하지 않는 일반 함수
 function getSorted(items) {
   return items.slice().sort();
 }
@@ -150,7 +150,7 @@ function getSorted(items) {
 function List({ items, shouldSort }) {
   let displayedItems = items;
   if (shouldSort) {
-    // ✅ It's ok to call getSorted() conditionally because it's not a Hook
+    // ✅ Hook이 아니기 때문에 getSorted()를 조건부로 호출할 수 있습니다
     displayedItems = getSorted(items);
   }
   // ...
@@ -160,7 +160,7 @@ function List({ items, shouldSort }) {
 내부에 최소 하나의 Hook을 사용하는 함수에는 `use` 접두사를 부여하세요(그렇게 Hook을 만드세요):
 
 ```js
-// ✅ Good: A Hook that uses other Hooks
+// ✅ Good: 다른 Hooks를 사용하는 Hook
 function useAuth() {
   return useContext(Auth);
 }
@@ -172,9 +172,9 @@ function useAuth() {
 그런 경우, `use` 접두사를 붙이는 것이 합리적입니다:
 
 ```js
-// ✅ Good: A Hook that will likely use some other Hooks later
+// ✅ Good: 추후에 다른 Hooks를 사용할 것으로 예상되는 Hook
 function useAuth() {
-  // TODO: Replace with this line when authentication is implemented:
+  // TODO: 인증이 구현되면 이 코드로 교체할 것:
   // return useContext(Auth);
   return TEST_USER;
 }
@@ -404,7 +404,7 @@ export function useChatRoom({ serverUrl, roomId, onReceiveMessage }) {
       onReceiveMessage(msg);
     });
     return () => connection.disconnect();
-  }, [roomId, serverUrl, onReceiveMessage]); // ✅ All dependencies declared
+  }, [roomId, serverUrl, onReceiveMessage]); // ✅ 모든 종속성이 선언됨
 }
 ```
 
@@ -431,7 +431,7 @@ export function useChatRoom({ serverUrl, roomId, onReceiveMessage }) {
       onMessage(msg);
     });
     return () => connection.disconnect();
-  }, [roomId, serverUrl]); // ✅ All dependencies declared
+  }, [roomId, serverUrl]); // ✅ 모든 종속성이 선언됨
 }
 ```
 
