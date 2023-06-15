@@ -173,8 +173,8 @@ Effect가 `increment`에만 "반응"하도록 작성되어 있는것 같습니�
 `setCount`를 호출하기 위해 필요한 현재의 `increment`를 사용하는 라인은 정말 리액티브 해야 할까요?
 
 **정답**
-이 이슈는 effect 내부의 코드가 `increment` 상태 변수를 사용하기 때문에 발생합니다.
-`increment`가 effect의 의존성 배열에 있는 한 `increment`의 모든 업데이트는 effect의 싱크를 다시 맞추게 됩니다. 이는 interval을 초기화하도록 만듭니다.
+이 이슈는 Effect 내부의 코드가 `increment` 상태 변수를 사용하기 때문에 발생합니다.
+`increment`가 effect의 의존성 배열에 있는 한 `increment`의 모든 업데이트는 Effect의 싱크를 다시 맞추게 됩니다. 이는 interval을 초기화하도록 만듭니다.
 만약 이 이벤트가 발생하기 전에 계속 interval을 초기화 한다면, 타이머가 멈춘 것처럼 보일 것입니다.
 
 이 문제를 해결하기 위해서는 `onTick` effect 이벤트를 effect 밖으로 추출해야 합니다.
