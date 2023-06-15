@@ -198,7 +198,7 @@ Effect 이벤트 내부의 코드는 리액티브 하지 않습니다. `setInter
 **정답**
 위 예시의 문제점은 `onMount` 코드가 실제로 무엇을 하는지 고려하지 않고 effect 이벤트로 추출했다는 것입니다.
 Effect event는 코드의 일부를 리액티브 하지 않게 만들려 하는 등의 특별한 이유가 있을때만 추출되어야 합니다. 하지만 `setInterval`의 호출은 `delay` 상태 변수의 관점에서는 리액티브 해야 합니다.
-`delay`가 변경되면 interval을 다시 시작하고 싶어하기 때문입니다. 이를 해결하기 위해서는 리액티브한 코드를 다시 effect의 내부러 이동시켜야 합니다.
+`delay`가 변경되면 interval을 다시 시작하고 싶어하기 때문입니다. 이를 해결하기 위해서는 리액티브한 코드를 다시 effect의 내부로 이동시켜야 합니다.
 
 <Code src="https://codesandbox.io/embed/relaxed-moore-2ndtb3?fontsize=14&hidenavigation=1&theme=dark" />
 
