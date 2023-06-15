@@ -182,7 +182,7 @@ function ChatRoom({ roomId, theme }) {
 
 이에 반해 `theme`는 반응형 값(리렌더링의 결과로 변경될 수 있음)이고, [모든 Effect에 의해 읽히는 반응형 값은
 의존성에 선언되어야합니다.](https://react.dev/learn/lifecycle-of-reactive-effects#react-verifies-that-you-specified-every-reactive-value-as-a-dependency)
-이제 여러분은 Effect에 `theme`를 특정해야합니다.
+이제 여러분은 Effect 의존성에 `theme`을 작성해야 합니다.
 
 ```js
 function ChatRoom({ roomId, theme }) {
