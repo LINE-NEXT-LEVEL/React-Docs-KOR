@@ -326,7 +326,7 @@ function Page({ url }) {
 ```
 
 여러분은 `numberOfItems`를 Effect 내부에 사용하였으므로 linter는 종속성에 추가하라고 요구합니다.
-하지만, 여러분은 `logVisit`를 `numberOfItems`에 반응하여 호출되기를 원하지 않습니다.
+하지만, 여러분은 `logVisit`이 `numberOfItems`에 반응하여 호출되기를 원하지 않습니다.
 만양 유저가 쇼핑카트에 무언가를 추가하여 `numberOfItems`가 변경되면, 이는 유저가 그 페이지를 재방문 했다는 *의미가 아닙니다.*
 다르게 말하면, *페이지를 방문하는 것*은 "이벤트"에 가깝습니다. 특정한 시간에 발생하게 됩니다.
 
