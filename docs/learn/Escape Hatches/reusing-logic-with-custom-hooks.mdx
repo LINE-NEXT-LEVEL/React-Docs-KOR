@@ -347,7 +347,7 @@ export default function ChatRoom({ roomId }) {
 
 `ChatRoom` 컴포넌트가 재렌더링 될 때마다, 그것은 최신의 `roomId`와 serverUrl`을 여러분의 Hook에 넘겨줍니다. 여러분의 Effect가 리렌더링 후에 값들이 다를 때 재연결하는 이유입니다. (만약 음향이나 비디오 프로세싱 소프트웨어로 작업해보았다면, 이와 같이 Hooks를 연결하는 것은 시각 또는 음향 효과들을 연결하는 걸 떠오르게 할 것입니다. `useState`의 결과 값이 `useChatRoom`의 입력 값으로 “먹여 주는 것”과 같습니다.)
 
-\*\*커스텀 Hooks로 이벤트 핸들러 넘기기
+## 커스텀 Hooks로 이벤트 핸들러 넘기기
 
 :::danger 작업중
 이 영역은 안정된 React 버전에 배포되지 않은 실험적인 API를 설명합니다.
