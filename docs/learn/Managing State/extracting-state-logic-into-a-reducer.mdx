@@ -452,4 +452,100 @@ case 'changed_selection': {
 이는 여러 수신인 간에 단일 메시지 초안을 공유하지 않기 때문입니다. 
 하지만 앱이 각 연락처에 대한 초안을 별도로 "기억"하여 연락처를 전환할 때 해당 연락처를 복원하는 것이 더 나을 수 있습니다.
 
-연락처별로 별도의 메시지 초안을 기억할 수 있도록 상태가 구성되는 방식을 변경하는 것이 작업입니다. 감속기, 초기 상태 및 성분을 몇 가지 변경해야 합니다.
+연락처별로 별도의 메시지 초안을 기억할 수 있도록 상태가 구성되는 방식을 변경하는 것이 작업입니다. reducer, 초기 상태 및 컴포넌트를 몇 가지 변경해야 합니다.
+
+<Code src="https://codesandbox.io/s/k7yl8v?file=%2FApp.js&utm_medium=sandpack"/>
+
+### 힌트 
+
+상태를 이렇게 구성할 수 있습니다.
+
+```js
+export const initialState = {
+  selectedId: 0,
+  messages: {
+    0: 'Hello, Taylor', // Draft for contactId = 0
+    1: 'Hello, Alice', // Draft for contactId = 1
+  },
+};
+```
+
+`[key]: value` [계산된 속성](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer#computed_property_names) 문법이 `messages` 객체를 업데이트하도록 도와줄 것입니다.
+
+### 해답
+
+연락처마다 각각의 메세지 초안을 저장하고 업데이트하도록 reducer를 업데이트할 필요가 있을 것입니다. 
+
+```js 
+// 입력창이 수정되었을 때
+case 'edited_message': {
+  return {
+    // Keep other state like selection
+    ...state,
+    messages: {
+      // Keep messages for other contacts
+      ...state.messages,
+      // But change the selected contact's message
+      [state.selectedId]: action.message
+    }
+  };
+}
+```
+
+현재 선택된 연락처를 위한 메세지를 읽기 위해 `Messenger` 컴포넌트도 업데이트 해야합니다. 
+
+```js 
+const message = state.messages[state.selectedId];
+```
+
+여기 완전한 해답이 있습니다.
+
+<Code src="https://codesandbox.io/s/emzq56?file=%2FApp.js&utm_medium=sandpack"/>
+
+특히 이러한 다른 동작을 구현하기 위해 이벤트 핸들러를 변경할 필요가 없습니다. 
+reducer가 없으면 상태를 업데이트하는 모든 이벤트 핸들러를 변경해야 할 것입니다.
+
+### 도전4: `useReducer`를 처음부터 구현해보기
+
+이전 예시에서, React에서 `useReducer` 훅을 가져와서 사용했습니다.
+이번에는. `useReducer` 훅 그 자체를 구현해볼 것입니다! 여기 시작해볼 수 있는 뼈대가 있습니다. 
+10줄 넘게 필요하지 않을 것입니다.
+
+변경을 테스트해보기 위해, 입력창에 입력해보거나 연락처를 선택해보세요. 
+
+<Code src="https://codesandbox.io/s/e9dbk6?file=%2FMyReact.js&utm_medium=sandpack"/>
+
+### 힌트
+
+좀 더 자세하게 구현해보았습니다:
+
+```js 
+export function useReducer(reducer, initialState) {
+  const [state, setState] = useState(initialState);
+
+  function dispatch(action) {
+    // ???
+  }
+
+  return [state, dispatch];
+}
+```
+
+두 개의 인자를 받는 reducer 함수를 다시 불러보세요. 두 개의 인자는 현재의 상태와 action 객체입니다. 
+그리고 함수는 다음 상태를 반환합니다. `dispatch`는 반환된 상태로 무엇을 하도록 구현이 되어야 할까요?
+
+### 해답 
+
+action을 보내는 것은 현재의 상태와 action을 가진 reducer를 호출합니다. 그리고 결과값과 다음 상태를 저장합니다. 코드는 다음과 같이 생겨야합니다.
+
+<Code src="https://codesandbox.io/s/y512l0?file=%2FMyReact.js&utm_medium=sandpack"/>
+
+대부분의 경우에 중요하지 않지만, 조금 더 정확하게 구현하면 다음과 같습니다. 
+
+```js 
+ function dispatch(action) {
+  setState((s) => reducer(s, action));
+}
+```
+
+보내진 action은 다음 렌더링 때까지 큐 형태로 쌓이기 때문에, [업데이터 합수와 비슷](https://react.dev/learn/queueing-a-series-of-state-updates)합니다. 
