@@ -3,16 +3,19 @@
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
+const organizationName = 'line-next-level';
+const projectName = 'React-Docs-KOR'
+
 const config = {
-  title: 'React Docs Beta',
-  url: 'https://your-docusaurus-test-site.com',
-  baseUrl: '/',
+  title: 'React Docs KOR',
+  url: `https://${organizationName}.github.io`,
+  baseUrl: `/${projectName}/`,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-
-  organizationName: 'LINE-NEXT-LEVEL',
-  projectName: 'docusaurus',
+  trailingSlash: false,
+  organizationName,
+  projectName,
   i18n: {
     defaultLocale: 'ko',
     locales: ['ko'],
@@ -24,8 +27,7 @@ const config = {
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
