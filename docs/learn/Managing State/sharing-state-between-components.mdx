@@ -21,7 +21,7 @@ import {Code} from "../../../src/components/Code";
 
 두 panel들에서 Show 버튼을 누르세요.
 
-<Code src="https://codesandbox.io/s/60d400?file=%2FApp.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/60d400?file=%2FApp.js&utm_medium=sandpack"/>
 
 하나의 panel의 버튼을 누르는 것이 다른 panel에 영향을 주지않음을 알 수 있습니다 - 둘은 독립적입니다.
 
@@ -62,7 +62,7 @@ function Panel({ title, children, isActive }) {
 
 이 예시에서는 `Accordion` 컴포넌트입니다. 두 panel들의 상위에 있고 그들의 prop들을 조작할 수 있기때문에, 어떤 panel이 현재 활성화 상태인지에 대한 “사실 원천”이 됩니다. `Accordion` 컴포넌트가 두 panel들에 `isActive`의 하드코딩된 값을 넘겨주도록 해보세요. (예를 들면 `true`와 같은 것을요)
 
-<Code src="https://codesandbox.io/s/g47pds?file=/App.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/g47pds?file=/App.js&utm_medium=sandpack"/>
 
 `Accordion`컴포넌트의 하드코딩된 `isActive`값 수정을 시도하고 화면에서 결과를 보세요.
 
@@ -101,7 +101,7 @@ const [activeIndex, setActiveIndex] = useState(0);
 
 `Panel`내부의 `<button>`은 이제 `onShow` prop을 클릭 이벤트 리스너로 사용합니다.
 
-<Code src="https://codesandbox.io/s/1jkdgm?file=/App.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/1jkdgm?file=/App.js&utm_medium=sandpack"/>
 
 이로서 상태 올리기를 마무리합니다! 공통 부모 컴포넌트로 상태를 옮기는 것은 여러분이 두 panel들을 조정할 수 있도록 해주었습니다. 두 “보여짐” 플래그 대신에 활성 인덱스를 사용하는 것으로 한번에 하나의 panel만 활성되도록 보장합니다. 그리고 자식에게 이벤트 핸들러를 내려주는 것으로 자식이 부모의 상태를 변경할 수 있습니다.
 
@@ -147,7 +147,7 @@ React 앱에서, 많은 컴포넌트들은 자신의 상태를 가집니다. 어
 
 이 두 입력값은 독립적입니다. 두 값이 동기화되도록 만들어보세요: 하나의 입력값을 수정하는 것은 다른 입력을 같은 문자로 업데이트해야합니다. 반대의 경우도 같습니다.
 
-<Code src="https://codesandbox.io/s/fskycg?file=%2FApp.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/fskycg?file=%2FApp.js&utm_medium=sandpack"/>
 
 ### 힌트
 
@@ -158,7 +158,7 @@ React 앱에서, 많은 컴포넌트들은 자신의 상태를 가집니다. 어
 `text` 상태를 `handleChange` 핸들러와 함께 부모 컴포넌트로 옮기세요.
 그리고 `Input` 컴포넌트로 prop으로 내려주세요. 이렇게 하면 두 값을 동기화할 수 있습니다.
 
-<Code src="https://codesandbox.io/s/r6mp9s?file=%2FApp.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/r6mp9s?file=%2FApp.js&utm_medium=sandpack"/>
 
 ## 2. 리스트 필터링하기
 
@@ -168,7 +168,7 @@ React 앱에서, 많은 컴포넌트들은 자신의 상태를 가집니다. 어
 
 `filterItem`은 이미 구현되었고 import되었으므로 직접 작성할 필요는 없습니다.
 
-<Code src="https://codesandbox.io/s/mkpn10?file=%2FApp.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/mkpn10?file=%2FApp.js&utm_medium=sandpack"/>
 
 ### 힌트
 
@@ -178,5 +178,5 @@ React 앱에서, 많은 컴포넌트들은 자신의 상태를 가집니다. 어
 
 `query` 상태를 `FilterableList`로 올리세요. `filterItems(foods, query)`를 호출하여 필터된 리스트를 얻고 `List`로 내려주세요. 이제 쿼리 입력을 변경하면 리스트에 반영됩니다:
 
-<Code src="https://codesandbox.io/s/18poz8?file=%2FApp.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/18poz8?file=%2FApp.js&utm_medium=sandpack"/>
 :::

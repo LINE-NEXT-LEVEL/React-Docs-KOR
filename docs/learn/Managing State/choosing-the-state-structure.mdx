@@ -260,7 +260,7 @@ function Message({ initialColor }) {
 선택창에서 다른 색깔을 고를 때, `Clock` 컴포넌트는 부모 컴포넌트로부터 다른 `color` prop을 받습니다.
 하지만, 모종의 이유로 표시되는 색깔은 업데이트되지 않습니다. 왜일까요? 문제를 고쳐보세요.
 
-<Code src="https://codesandbox.io/s/wkpf1p?file=%2FClock.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/wkpf1p?file=%2FClock.js&utm_medium=sandpack"/>
 
 > **정답**
 
@@ -268,11 +268,11 @@ function Message({ initialColor }) {
 > 하지만 `color` prop이 변경될 때, 상태 변수에 prop이 영향을 주지 않습니다!
 > 그래서 동기화가 맞지 않았습니다. 이 문제를 해결하기 위해, 상태 변수를 모두 제거하고 `color` prop을 직접 사용하세요.
 
-<Code src="https://codesandbox.io/s/848koo?file=%2FClock.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/848koo?file=%2FClock.js&utm_medium=sandpack"/>
 
 > 또는 재분해 문법을 사용하세요:
 
-<Code src="https://codesandbox.io/s/6gieex?file=%2FClock.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/6gieex?file=%2FClock.js&utm_medium=sandpack"/>
 
 :::
 
@@ -285,7 +285,7 @@ function Message({ initialColor }) {
 예를 들어, 아이템을 포장된 것으로 체크하고나서 그것을 삭제하면, 개수가 정확하게 업데이트되지 않을 것입니다.
 개수 계산이 항상 정확하게 맞도록 고치세요.
 
-<Code src="https://codesandbox.io/s/xkuim8?file=/App.js&utm_medium=sandpack">
+<Code src="https://codesandbox.io/s/xkuim8?file=/App.js&utm_medium=sandpack"/>
 
 > **힌트**
 
@@ -297,7 +297,7 @@ function Message({ initialColor }) {
 > 이 상태 변수들은 불필요합니다. 그 이유는 항상 `items` 배열에서 아이템의 개수(포장 또는 전체)를 항상 계산할 수 있기 때문입니다.
 > 버그를 고치기 위해 불필요한 상태를 제거하세요:
 
-<Code src="https://codesandbox.io/s/c1slci?file=%2FApp.js&utm_medium=sandpack"> 
+<Code src="https://codesandbox.io/s/c1slci?file=%2FApp.js&utm_medium=sandpack"/> 
 
 > 변화 직후 이벤트 핸들러가 어떻게 `setItems`를 부르는 것에만 집중하는지 주목하세요.
 > 아이템 개수는 다음 렌더링 동안 `items`로부터 잘 계산되어지면서 항상 동기화됩니다.
