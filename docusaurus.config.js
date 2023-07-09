@@ -62,15 +62,6 @@ const config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Learn',
-              to: '/docs/learn',
-            },
-          ],
-        },
-        {
           title: 'Community',
           items: [
             {
